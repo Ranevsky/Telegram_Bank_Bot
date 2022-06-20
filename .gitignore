@@ -5,6 +5,8 @@
 
 # Ignore
 appsettings.json
+Todo.txt
+
 
 # User-specific files
 *.rsuser

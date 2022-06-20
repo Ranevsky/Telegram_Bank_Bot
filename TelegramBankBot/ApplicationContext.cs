@@ -6,7 +6,7 @@ namespace TelegramBankBot;
 
 public class ApplicationContext : DbContext
 {
-    static private string _connection = Program.Configuration.GetSection("ConnectionStrings")["DefaultConnection"];
+    static readonly private string _connection = Program.Configuration.GetSection("ConnectionStrings")["DefaultConnection"];
     public DbSet<User> Users { get; set; } = null!;
 
     public ApplicationContext() : base() 

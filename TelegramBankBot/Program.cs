@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-using Telegram.Bot.Types;
 using Telegram.Bot;
-
-using TelegramBankBot.Model;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace TelegramBankBot;
+//if (message.Text is not { } messageText)
+//var chatId = message.Chat.Id;
 
+//Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
 public class Program
 {
     public static IConfiguration Configuration { get; private set; } = null!;
@@ -20,8 +21,11 @@ public class Program
         builder.AddJsonFile("appsettings.json");
         Configuration = builder.Build();
     }
+    private static ILogger _log = null!;
     public static async Task Main()
     {
+        _log = new ConsoleLogger();
+
         GetConfiguration();
         await StartBot();
 
@@ -30,15 +34,15 @@ public class Program
         menu.Menu(0);
     }
 
-    static async Task StartBot()
+    private static async Task StartBot()
     {
         string token = Configuration.GetSection("Telegram")["Token"];
-        var botClient = new TelegramBotClient(token);
+        TelegramBotClient? botClient = new(token);
 
-        using var cts = new CancellationTokenSource();
+        using CancellationTokenSource? cts = new();
 
         // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
-        var receiverOptions = new ReceiverOptions
+        ReceiverOptions? receiverOptions = new()
         {
             AllowedUpdates = Array.Empty<UpdateType>() // receive all update types
         };
@@ -50,9 +54,9 @@ public class Program
             cancellationToken: cts.Token
         );
 
-        var me = await botClient.GetMeAsync();
+        Telegram.Bot.Types.User? me = await botClient.GetMeAsync();
 
-        Console.WriteLine($"Start listening for @{me.Username}");
+        _log.Info($"Start listening for @{me.Username}");
         Console.ReadLine();
 
         // Send cancellation request to stop bot
@@ -60,103 +64,57 @@ public class Program
     }
 
     // Обработчик сообщений
-    static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        // Only process Message updates: https://core.telegram.org/bots/api#message
-        //if (update.Message is not { } message)
-        //    return;
-
-        //if(update.Type == UpdateType.Message)
-
-        Chat chat = update.Message!.Chat;
-        Console.WriteLine($"{chat.Id} {chat.FirstName}");
-
         switch (update.Type)
         {
             case UpdateType.Message:
             {
-                HandleMessage(botClient, update.Message!);
+                //update.
+                BotHandleMessage bot = new(botClient, update);
+                await bot.HandleMessageAsync();
                 break;
             }
-            
+
+            case UpdateType.CallbackQuery:
+            {
+                _log.Info($"Callback");
+                //update.CallbackQuery.From.Id
+                //return;
+                //update.CallbackQuery.Message.Chat.Id
+                BotHandleCallback bot = new(botClient, update);
+                
+                //await botClient.SendTextMessageAsync(update.CallbackQuery.From.Id, "asd");
+                //await HandleCallBackQuery(botClient, update.CallbackQuery!);
+                break;
+            }
+
             default:
             {
-                Console.WriteLine($"ERROR: '{update.Type}' is not implemented");
+                _log.Warning($"'{update.Type}' is not implemented");
                 return;
             }
         }
-
-
-
-        // Only process text messages
-        //if (message.Text is not { } messageText)
-        //    return;
-
-        //var chatId = message.Chat.Id;
-
-        //Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
-
-        // Echo received message text
-        //Message sentMessage = await botClient.SendTextMessageAsync(
-        //    chatId: chatId,
-        //    text: "You said:\n" + messageText,
-        //    cancellationToken: cancellationToken);
     }
 
-    // Обработчик ошибок
-    static Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    private static Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
+        string? ErrorMessage = exception switch
         {
             ApiRequestException apiRequestException
                 => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
             _ => exception.ToString()
         };
 
-        Console.WriteLine(ErrorMessage);
+        _log.Error(ErrorMessage);
         return Task.CompletedTask;
     }
 
-
-    static async void HandleMessage(ITelegramBotClient botClient, Message message)
+    private static async Task HandleCallBackQuery(ITelegramBotClient botClient, CallbackQuery message)
     {
-        switch (message.Type)
-        {
-            case MessageType.Text:
-            {
-                HandleMessageText(botClient, message);
-                break;
-            }
-
-            case MessageType.Dice:
-            {
-                
-                await botClient.SendTextMessageAsync(
-                    message.Chat.Id,
-                    message.Dice!.Value.ToString()
-                    );
-                break;
-            }
-        
-
-
-            default:
-            {
-                Console.WriteLine($"ERROR: '{message.Type}' is not implemented");
-                return;
-            }
-        }
-        
+        string text = $"{message.ChatInstance} {message.Data}";
+        await botClient.SendTextMessageAsync(
+            chatId: message.Message!.Chat.Id,
+            text: text);
     }
-    static void HandleMessageText(ITelegramBotClient botClient, Message message)
-    {
-        Chat chat = message.Chat;
-        string msg = message.Text!; // +?
-        string? firstName = chat.FirstName; // +
-        string? lastName = chat.LastName; // -
-        string? username = chat.Username; // -
-        long id = message.Chat.Id; // +
-        Console.WriteLine($"|{firstName}| |{lastName}| |{username}| |{id}| |{msg}|");
-    }
-
 }

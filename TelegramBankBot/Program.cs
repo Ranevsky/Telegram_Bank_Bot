@@ -36,8 +36,7 @@ public class Program
 
     private static async Task StartBot()
     {
-        string token = Configuration.GetSection("Telegram")["Token"];
-        TelegramBotClient? botClient = new(token);
+        ITelegramBotClient botClient = Bot.BotClient;
 
         using CancellationTokenSource? cts = new();
 
@@ -71,7 +70,7 @@ public class Program
             case UpdateType.Message:
             {
                 //update.
-                BotHandleMessage bot = new(botClient, update);
+                BotHandleMessage bot = new(update);
                 await bot.HandleMessageAsync();
                 break;
             }
@@ -79,13 +78,8 @@ public class Program
             case UpdateType.CallbackQuery:
             {
                 _log.Info($"Callback");
-                //update.CallbackQuery.From.Id
-                //return;
-                //update.CallbackQuery.Message.Chat.Id
-                BotHandleCallback bot = new(botClient, update);
-                
-                //await botClient.SendTextMessageAsync(update.CallbackQuery.From.Id, "asd");
-                //await HandleCallBackQuery(botClient, update.CallbackQuery!);
+                BotHandleCallback bot = new(update);
+                await bot.HandleCallbackAsync();
                 break;
             }
 
@@ -108,13 +102,5 @@ public class Program
 
         _log.Error(ErrorMessage);
         return Task.CompletedTask;
-    }
-
-    private static async Task HandleCallBackQuery(ITelegramBotClient botClient, CallbackQuery message)
-    {
-        string text = $"{message.ChatInstance} {message.Data}";
-        await botClient.SendTextMessageAsync(
-            chatId: message.Message!.Chat.Id,
-            text: text);
     }
 }

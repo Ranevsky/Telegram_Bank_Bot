@@ -11,16 +11,14 @@ public class BotHandleMessage : Bot
 
     #region ctor's
 
-    public BotHandleMessage(ITelegramBotClient botClient, Message message)
-        : base(botClient, message.Chat.Id)
+    public BotHandleMessage(Message message)
+        : base(message.Chat.Id)
     {
         _message = message ?? throw new NullReferenceException(nameof(message));
     }
 
-    public BotHandleMessage(ITelegramBotClient botClient, Update update)
-        : this(
-              botClient,
-              update.Message ?? throw new NullReferenceException(nameof(update.Message)))
+    public BotHandleMessage(Update update)
+        : this(update.Message ?? throw new NullReferenceException(nameof(update.Message)))
     {
         
     }
@@ -44,7 +42,7 @@ public class BotHandleMessage : Bot
 
             default:
             {
-                _log.Warning($"'{_message.Type}' is not implemented");
+                Log.Warning($"'{_message.Type}' is not implemented");
                 return;
             }
         }
@@ -54,7 +52,7 @@ public class BotHandleMessage : Bot
     {
         string text = _message.Text!;
 
-        _log.Info($"Message {_id} {_message.Chat.FirstName} '{text}'");
+        Log.Info($"Message {Id} {_message.Chat.FirstName} '{text}'");
         if (text.StartsWith('/'))
         {
             await HandleCommandTextAsync(text);
@@ -80,8 +78,12 @@ public class BotHandleMessage : Bot
                 await SumCommand();
                 break;
 
+            case "/CALLBACK":
+                BotHandleCallback.SendCallBack(Id);
+                break;
+
             default:
-                _log.Warning($"Command '{commandString}' not implemented");
+                Log.Warning($"Command '{commandString}' not implemented");
                 return;
         }
 
@@ -106,7 +108,7 @@ public class BotHandleMessage : Bot
         }
         void HelloCommand()
         {
-            _log.Info("Hello");
+            Log.Info("Hello");
         }
     }
 }

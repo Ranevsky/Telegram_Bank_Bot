@@ -8,6 +8,10 @@ namespace TelegramBankBot;
 
 public class ConsoleLogger : ILogger
 {
+    public ConsoleLogger()
+    {
+        Console.WriteLine("create");
+    }
     public void Info(string message)
     {
         ColorText("INFO:", message, ConsoleColor.Green);

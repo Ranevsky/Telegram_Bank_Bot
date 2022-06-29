@@ -8,23 +8,14 @@ using Telegram.Bot.Types.Enums;
 
 namespace TelegramBankBot;
 //if (message.Text is not { } messageText)
-//var chatId = message.Chat.Id;
 
-//Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
 public class Program
 {
     public static IConfiguration Configuration { get; private set; } = null!;
-    private static void GetConfiguration()
-    {
-        ConfigurationBuilder? builder = new();
-        builder.SetBasePath(Directory.GetCurrentDirectory());
-        builder.AddJsonFile("appsettings.json");
-        Configuration = builder.Build();
-    }
-    private static ILogger _log = null!;
+    public static ILogger Log { get; private set; } = null!;
     public static async Task Main()
     {
-        _log = new ConsoleLogger();
+        Log = new ConsoleLogger();
 
         GetConfiguration();
         await StartBot();
@@ -33,7 +24,13 @@ public class Program
         //menu[1, "Add"] = () => AddUser();
         menu.Menu(0);
     }
-
+    private static void GetConfiguration()
+    {
+        ConfigurationBuilder? builder = new();
+        builder.SetBasePath(Directory.GetCurrentDirectory());
+        builder.AddJsonFile("appsettings.json");
+        Configuration = builder.Build();
+    }
     private static async Task StartBot()
     {
         ITelegramBotClient botClient = Bot.BotClient;
@@ -55,42 +52,37 @@ public class Program
 
         Telegram.Bot.Types.User? me = await botClient.GetMeAsync();
 
-        _log.Info($"Start listening for @{me.Username}");
+        Log.Info($"Start listening for @{me.Username}");
         Console.ReadLine();
 
         // Send cancellation request to stop bot
         cts.Cancel();
     }
-
-    // Обработчик сообщений
     private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        switch (update.Type)
+        Bot? bot = update.Type switch
         {
-            case UpdateType.Message:
-            {
-                //update.
-                BotHandleMessage bot = new(update);
-                await bot.HandleMessageAsync();
-                break;
-            }
+            UpdateType.Message => new BotMessageHandler(update),
+            UpdateType.CallbackQuery => new BotCallbackHandler(update),
+            _ => null
+        };
 
-            case UpdateType.CallbackQuery:
-            {
-                _log.Info($"Callback");
-                BotHandleCallback bot = new(update);
-                await bot.HandleCallbackAsync();
-                break;
-            }
 
-            default:
-            {
-                _log.Warning($"'{update.Type}' is not implemented");
-                return;
-            }
+        if (bot == null)
+        {
+            Log.Warning($"'{update.Type}' is not implemented");
+            return;
+        }
+
+        try
+        {
+            await bot.HandleAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
         }
     }
-
     private static Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string? ErrorMessage = exception switch
@@ -100,7 +92,7 @@ public class Program
             _ => exception.ToString()
         };
 
-        _log.Error(ErrorMessage);
+        Log.Error(ErrorMessage);
         return Task.CompletedTask;
     }
 }

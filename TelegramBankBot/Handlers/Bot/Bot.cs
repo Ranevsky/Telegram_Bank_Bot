@@ -6,7 +6,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramBankBot;
 
-public class Bot
+public abstract class Bot
 {
     public static ITelegramBotClient BotClient { get; private set; }
     public long Id { get; private set; }
@@ -16,15 +16,15 @@ public class Bot
         BotClient = new TelegramBotClient(token);
     }
 
-    protected readonly ILogger Log = new ConsoleLogger();
+    protected readonly ILogger Log = Program.Log;
 
     public Bot(long id)
     {
         Id = id;
     }
-    protected async Task SendMessageAsync(string text, ParseMode? parseMode = null, IEnumerable<MessageEntity>? entities = null, bool? disableWebPagePreview = null, bool? disableNotification = null, bool? protectContent = null, int? replyToMessageId = null, bool? allowSendingWithoutReply = null, IReplyMarkup? replyMarkup = null, CancellationToken cancellationToken = default)
+    public async Task SendMessageAsync(string text, ParseMode? parseMode = null, IEnumerable<MessageEntity>? entities = null, bool? disableWebPagePreview = null, bool? disableNotification = null, bool? protectContent = null, int? replyToMessageId = null, bool? allowSendingWithoutReply = null, IReplyMarkup? replyMarkup = null, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine(Id);
+        Log.Info($"Bot say '{Id}': {text}");
         await BotClient.SendTextMessageAsync(
             chatId: Id,
             text: text,
@@ -40,4 +40,6 @@ public class Bot
             );
     }
 
+
+    public abstract Task HandleAsync();
 }

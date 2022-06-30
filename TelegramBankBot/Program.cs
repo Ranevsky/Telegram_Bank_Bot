@@ -19,10 +19,6 @@ public class Program
 
         GetConfiguration();
         await StartBot();
-
-        Helper.Menu.MenuDescription<int, Action> menu = new();
-        //menu[1, "Add"] = () => AddUser();
-        menu.Menu(0);
     }
     private static void GetConfiguration()
     {
@@ -59,7 +55,34 @@ public class Program
         cts.Cancel();
     }
     private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-    {
+    {        
+        if (update.Type == UpdateType.MyChatMember)
+        {
+            ChatMember member = update.MyChatMember!.NewChatMember;
+            ChatMemberStatus status = member.Status;
+
+            switch (status)
+            {
+                case ChatMemberStatus.Kicked:
+                {
+                    // remove user in db
+                    break;
+                }
+                case ChatMemberStatus.Member:
+                {
+                    // add user in db
+                    break;
+                }
+                default:
+                {
+                    Console.WriteLine($"ERROR chatmember status '{status}' not handling");
+                    break;
+                }
+            }
+            return;
+        }
+
+
         Bot? bot = update.Type switch
         {
             UpdateType.Message => new BotMessageHandler(update),

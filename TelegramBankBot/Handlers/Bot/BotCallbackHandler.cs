@@ -1,14 +1,4 @@
-﻿
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram;
-using Telegram.Bot.Args;
-using Telegram.Bot.Extensions.Polling;
-using Telegram.Bot.Extensions;
-using Telegram.Bot.Requests.Abstractions;
-using Telegram.Bot.Requests;
-using Telegram.Bot.Types.InlineQueryResults;
+﻿using Telegram.Bot.Types;
 
 namespace TelegramBankBot;
 
@@ -17,18 +7,18 @@ public class BotCallbackHandler : Bot
     private readonly CallbackQuery _callback = null!;
     #region ctor's
     public BotCallbackHandler(CallbackQuery callbackQuery)
-        : base(callbackQuery.Message!.Chat.Id)
+        : base(callbackQuery.Message ?? throw new NullReferenceException(nameof(callbackQuery)))
     {
         _callback = callbackQuery;
 
-        InitializeDictionary(this);
+        InitializeDictionary();
     }
 
-    private void InitializeDictionary(Bot bot)
+    private void InitializeDictionary()
     {
         dict = new()
         {
-            { nameof(MainMenu), args => { new MainMenu(this).Handle(args); } }
+            { nameof(MainMenu), async (args, messageId) => { await new MainMenu(this).HandleAsync(args, messageId); } }
         };
     }
 
@@ -39,7 +29,7 @@ public class BotCallbackHandler : Bot
     }
     #endregion
 
-    Dictionary<string, Action<string[]>> dict = null!;
+    private Dictionary<string, Func<string[], int, Task>> dict = null!;
     public override async Task HandleAsync()
     {
         Message msg = _callback.Message!;
@@ -51,12 +41,21 @@ public class BotCallbackHandler : Bot
 
 
         string[] args = _callback.Data!.Split('.');
-
-        if (dict.TryGetValue(args[0], out var act))
+        try
         {
-            act.Invoke(args);
+            if (dict.TryGetValue(args[0], out var act))
+            {
+                await act.Invoke(args, msg.MessageId);
+            }
+            else
+            {
+                throw new Exception($"'{_callback.Data!}' not found");
+            }
         }
-
+        catch (Exception ex)
+        {
+            Log.Error(ex.Message);
+        }
         //async Task SetLocation()
         //{
         //    InlineKeyboardMarkup inline = new(new[]

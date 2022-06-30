@@ -10,22 +10,25 @@ public abstract class Bot
 {
     public static ITelegramBotClient BotClient { get; private set; }
     public long Id { get; private set; }
+    public Message Message { get; private set; }
     static Bot()
     {
         string token = Program.Configuration.GetSection("Telegram")["Token"];
         BotClient = new TelegramBotClient(token);
     }
 
-    protected readonly ILogger Log = Program.Log;
+    protected static readonly ILogger Log = Program.Log;
 
-    public Bot(long id)
+    public Bot(Message message)
     {
-        Id = id;
+        Message = message;
+        Id = message.Chat.Id;
     }
-    public async Task SendMessageAsync(string text, ParseMode? parseMode = null, IEnumerable<MessageEntity>? entities = null, bool? disableWebPagePreview = null, bool? disableNotification = null, bool? protectContent = null, int? replyToMessageId = null, bool? allowSendingWithoutReply = null, IReplyMarkup? replyMarkup = null, CancellationToken cancellationToken = default)
+
+    public async Task<Message> SendMessageAsync(string text, ParseMode? parseMode = null, IEnumerable<MessageEntity>? entities = null, bool? disableWebPagePreview = null, bool? disableNotification = null, bool? protectContent = null, int? replyToMessageId = null, bool? allowSendingWithoutReply = null, IReplyMarkup? replyMarkup = null, CancellationToken cancellationToken = default)
     {
         Log.Info($"Bot say '{Id}': {text}");
-        await BotClient.SendTextMessageAsync(
+        return await BotClient.SendTextMessageAsync(
             chatId: Id,
             text: text,
             parseMode: parseMode,

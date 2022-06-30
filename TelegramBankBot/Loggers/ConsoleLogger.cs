@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TelegramBankBot;
+﻿namespace TelegramBankBot;
 
 public class ConsoleLogger : ILogger
 {
@@ -27,7 +21,7 @@ public class ConsoleLogger : ILogger
 
     private static void ColorText(string colorMessage, string message, ConsoleColor color)
     {
-        var beginColor = Console.BackgroundColor;
+        ConsoleColor beginColor = Console.BackgroundColor;
         Console.BackgroundColor = color;
         Console.ForegroundColor = ConsoleColor.Black;
         Console.Write(colorMessage);

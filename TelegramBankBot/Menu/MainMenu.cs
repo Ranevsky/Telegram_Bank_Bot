@@ -1,11 +1,15 @@
-﻿
+﻿using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Bot.Extensions;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Requests;
 
 namespace TelegramBankBot;
 
 public class MainMenu
 {
-    private Bot _bot;
+    private readonly Bot _bot;
     public MainMenu(Bot bot)
     {
         _bot = bot;
@@ -23,7 +27,7 @@ public class MainMenu
 
     public static InlineKeyboardMarkup GetKeyboard()
     {
-        var buttons = new InlineKeyboardButton[][]
+        InlineKeyboardButton[][]? buttons = new InlineKeyboardButton[][]
         {
             new InlineKeyboardButton[]
             {
@@ -43,23 +47,53 @@ public class MainMenu
         InlineKeyboardMarkup keyboard = new(buttons);
         return keyboard;
     }
-    public void Handle(string[] args)
+    public async Task HandleAsync(string[] args, int messageId)
     {
         string arg1 = args[1];
 
         Func<Task> action = arg1 switch
         {
             GEO => GeolocationHandle,
+            BANKS => BanksHandle,
+            CURR => CurrMennu,
             _ => UnknowHandle
         };
 
-        action.Invoke();
+        await action.Invoke();
 
 
+
+        Task CurrMennu()
+        {
+            if (args.Length > 2)
+            {
+                NearCurr();
+            }
+            else
+            {
+                BestCurr();
+            }
+            return Task.CompletedTask;
+
+
+
+            void BestCurr()
+            {
+#warning Implement BestCurr
+            }
+            void NearCurr()
+            {
+#warning Implement NearCurr
+            }
+        }
+        async Task BanksHandle()
+        {
+#warning Implement BanksHandle
+            await Bot.BotClient.EditMessageTextAsync(_bot.Id, messageId, "ABC");
+        }
         Task UnknowHandle()
         {
-            log.Error($"I don't know '{args[1]}'");
-            return Task.CompletedTask;
+            throw new Exception($"'{args[1]}' not implemented");
         }
         async Task GeolocationHandle()
         {
@@ -70,9 +104,7 @@ public class MainMenu
             {
                 ResizeKeyboard = true,
             };
-
-            Console.WriteLine("Reqiured geo");
-            await _bot.SendMessageAsync("Geo", replyMarkup: replyKeyboardMarkup);
+            await _bot.SendMessageAsync("Send your Geo\nOr send '/remove_keyboard' to remove keyboard", replyMarkup: replyKeyboardMarkup);
         }
     }
 }

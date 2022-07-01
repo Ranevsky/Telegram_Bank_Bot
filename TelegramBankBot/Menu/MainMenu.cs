@@ -1,11 +1,10 @@
 ﻿using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot.Extensions;
-using Telegram.Bot.Polling;
-using Telegram.Bot.Requests;
 
-namespace TelegramBankBot;
+using TelegramBankBot.Handlers;
+using TelegramBankBot.Logger;
+
+namespace TelegramBankBot.Menu;
 
 public class MainMenu
 {

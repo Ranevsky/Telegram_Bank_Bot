@@ -1,6 +1,8 @@
 ﻿using Telegram.Bot.Types;
 
-namespace TelegramBankBot;
+using TelegramBankBot.Menu;
+
+namespace TelegramBankBot.Handlers;
 
 public class BotCallbackHandler : Bot
 {
@@ -14,10 +16,12 @@ public class BotCallbackHandler : Bot
         InitializeDictionary();
     }
 
+
     private void InitializeDictionary()
     {
         dict = new()
         {
+#warning retunr instance and use abstraction (instance).HandleAsync();
             { nameof(MainMenu), async (args, messageId) => { await new MainMenu(this).HandleAsync(args, messageId); } }
         };
     }
@@ -43,7 +47,7 @@ public class BotCallbackHandler : Bot
         string[] args = _callback.Data!.Split('.');
         try
         {
-            if (dict.TryGetValue(args[0], out var act))
+            if (dict.TryGetValue(args[0], out Func<string[], int, Task>? act))
             {
                 await act.Invoke(args, msg.MessageId);
             }

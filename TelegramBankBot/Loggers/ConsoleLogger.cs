@@ -1,4 +1,4 @@
-﻿namespace TelegramBankBot;
+﻿namespace TelegramBankBot.Logger;
 
 public class ConsoleLogger : ILogger
 {

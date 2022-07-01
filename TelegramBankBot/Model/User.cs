@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+using TelegramBankBot.Model.Interfaces;
+
 namespace TelegramBankBot.Model;
 
-public class User
+[Serializable]
+public class User : IEntityId
 {
     [Key]
-    public int Id { get; set; }
+    public long Id { get; set; }
     public string Name { get; set; } = null!;
 }

@@ -2,14 +2,14 @@
 
 using TelegramBankBot.Model;
 
-namespace TelegramBankBot;
+namespace TelegramBankBot.DB;
 
 public class ApplicationContext : DbContext
 {
-    static readonly private string _connection = Program.Configuration.GetSection("ConnectionStrings")["DefaultConnection"];
+    private static readonly string _connection = Program.Configuration.GetSection("ConnectionStrings")["DefaultConnection"];
     public DbSet<User> Users { get; set; } = null!;
 
-    public ApplicationContext() : base() 
+    public ApplicationContext() : base()
     {
         Database.EnsureCreated();
     }

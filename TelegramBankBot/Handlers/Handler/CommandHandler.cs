@@ -1,7 +1,10 @@
-﻿using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot;
+﻿using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
-namespace TelegramBankBot;
+using TelegramBankBot.Exntensions;
+using TelegramBankBot.Menu;
+
+namespace TelegramBankBot.Handlers;
 
 public class CommandHandler : Handler
 {
@@ -26,7 +29,7 @@ public class CommandHandler : Handler
             case "/REMOVE_KEYBOARD":
                 await RemoveKeyboard();
                 break;
-            
+
             default:
                 Log.Warning($"Command '{_commandString}' not implemented");
                 return;
@@ -34,14 +37,14 @@ public class CommandHandler : Handler
         async Task RemoveKeyboard()
         {
             await Bot.SendMessageAsync(
-                text: "Keyboard removed", 
+                text: "Keyboard removed",
                 replyMarkup: new ReplyKeyboardRemove());
         }
         async Task TestCommand()
         {
             InlineKeyboardMarkup keyBoard = MainMenu.GetKeyboard();
 
-            var msg = await Bot.SendMessageAsync(
+            Message? msg = await Bot.SendMessageAsync(
                 text: "TEST",
                 replyMarkup: keyBoard);
         }

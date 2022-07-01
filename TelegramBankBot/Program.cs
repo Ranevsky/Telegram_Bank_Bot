@@ -1,10 +1,18 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using AutoMapper;
+
+using Microsoft.Extensions.Configuration;
 
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+
+using TelegramBankBot.Automapper;
+using TelegramBankBot.DB;
+using TelegramBankBot.DB.Interfaces;
+using TelegramBankBot.Handlers;
+using TelegramBankBot.Logger;
 
 namespace TelegramBankBot;
 //if (message.Text is not { } messageText)
@@ -18,7 +26,16 @@ public class Program
         Log = new ConsoleLogger();
 
         GetConfiguration();
-        await StartBot();
+        try
+        {
+            ApplicationContext db = new();
+            UOW = new UnitOfWork(db);
+            await StartBot();
+        }
+        finally
+        {
+            UOW.Dispose();
+        }
     }
     private static void GetConfiguration()
     {
@@ -49,39 +66,89 @@ public class Program
         Telegram.Bot.Types.User? me = await botClient.GetMeAsync();
 
         Log.Info($"Start listening for @{me.Username}");
-        Console.ReadLine();
+
+        Helper.Menu.MenuDescription<int, Action> menu = new();
+        menu[1, "Send all"] = () =>
+        {
+            if (cts.IsCancellationRequested == true)
+            {
+                Console.WriteLine("End");
+                return;
+            }
+
+            Console.WriteLine("Enter text or send 'exit'");
+            string? text;
+            do
+            {
+                text = Console.ReadLine();
+            } while (string.IsNullOrEmpty(text));
+
+            if (string.Equals(text, "exit", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            IEnumerable<Model.User>? users = UOW.Users.GetAll().AsEnumerable();
+
+            try
+            {
+                Parallel.ForEach(users, async user =>
+                {
+                    await botClient.SendTextMessageAsync(user.Id, text);
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message);
+                return;
+            }
+
+            Console.WriteLine("Success");
+        };
+
+        menu.Menu(0);
 
         // Send cancellation request to stop bot
         cts.Cancel();
     }
+
+    public static IUnitOfWork UOW { get; private set; } = null!;
+    public static IMapper Mapper { get; private set; } = AutoMapping.Mapper;
     private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-    {        
+    {
         if (update.Type == UpdateType.MyChatMember)
         {
-            ChatMember member = update.MyChatMember!.NewChatMember;
+            ChatMemberUpdated memberUpdate = update.MyChatMember!;
+            ChatMember member = memberUpdate.NewChatMember;
             ChatMemberStatus status = member.Status;
+
+            TelegramBankBot.Model.User user = Mapper.Map<TelegramBankBot.Model.User>(memberUpdate.From);
 
             switch (status)
             {
                 case ChatMemberStatus.Kicked:
                 {
                     // remove user in db
+                    await UOW.Users.RemoveProtectedAsync(user);
+                    Log.Info($"Removed '{user.Id} {user.Name}'");
                     break;
                 }
                 case ChatMemberStatus.Member:
                 {
                     // add user in db
+                    await UOW.Users.AddAsync(user);
+                    Log.Info($"Added '{user.Id} {user.Name}'");
                     break;
                 }
                 default:
                 {
-                    Console.WriteLine($"ERROR chatmember status '{status}' not handling");
+                    Log.Error($"Chatmember status '{status}' not handling");
                     break;
                 }
             }
+            await UOW.SaveAsync();
             return;
         }
-
 
         Bot? bot = update.Type switch
         {

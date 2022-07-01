@@ -1,4 +1,6 @@
-﻿namespace TelegramBankBot;
+﻿using TelegramBankBot.Logger;
+
+namespace TelegramBankBot.Handlers;
 
 public abstract class Handler
 {

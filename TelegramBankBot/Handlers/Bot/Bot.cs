@@ -3,8 +3,9 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
+using TelegramBankBot.Logger;
 
-namespace TelegramBankBot;
+namespace TelegramBankBot.Handlers;
 
 public abstract class Bot
 {

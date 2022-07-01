@@ -1,6 +1,5 @@
 ﻿using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot;
 
 namespace TelegramBankBot.Handlers;
 
@@ -13,7 +12,7 @@ public class LocationHandler : Handler
     }
     public override async Task HandleAsync()
     {
-        var msg = await Bot.SendMessageAsync(
+        Message? msg = await Bot.SendMessageAsync(
             text: "Reply keyboard removed",
             replyMarkup: new ReplyKeyboardRemove());
 

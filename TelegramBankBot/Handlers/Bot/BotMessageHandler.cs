@@ -1,9 +1,7 @@
 ﻿using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-using TelegramBankBot.Handlers;
-
-namespace TelegramBankBot;
+namespace TelegramBankBot.Handlers;
 
 public class BotMessageHandler : Bot
 {

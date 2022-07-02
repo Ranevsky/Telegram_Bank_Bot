@@ -19,6 +19,16 @@ public static class AutoMapping
                 {
                     opt.MapFrom(tgUser => tgUser.Id);
                 });
+
+            cfg.CreateMap<Telegram.Bot.Types.Location, TelegramBankBot.Model.Location>()
+                .ForMember(userLocation => userLocation.Latitude, opt =>
+                {
+                    opt.MapFrom(tgLocation => tgLocation.Latitude);
+                })
+                .ForMember(userLocation => userLocation.Longitude, opt =>
+                {
+                    opt.MapFrom(tgLocation => tgLocation.Longitude);
+                });
         });
         _mapper = config.CreateMapper();
     }

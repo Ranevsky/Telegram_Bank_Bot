@@ -2,53 +2,49 @@
 using Telegram.Bot.Types.ReplyMarkups;
 
 using TelegramBankBot.Handlers;
-using TelegramBankBot.Logger;
 
-namespace TelegramBankBot.Menu;
 
-public class MainMenu
+namespace TelegramBankBot.Handlers.Menu;
+
+public class MainMenu : MenuHandler
 {
-    private readonly Bot _bot;
-    public MainMenu(Bot bot)
-    {
-        _bot = bot;
-    }
-
-    public static string Name { get; } = nameof(MainMenu);
-
-    private static readonly ILogger log = Program.Log;
-
     private const string GEO = "geo";
     private const string BANKS = "banks";
     private const string CURR = "curr";
     private const string CURR_NEAR = "near";
-
-
+    private const string NAME = nameof(MainMenu);
     public static InlineKeyboardMarkup GetKeyboard()
     {
         InlineKeyboardButton[][]? buttons = new InlineKeyboardButton[][]
         {
             new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData("Geolocation", $"{Name}.{GEO}"),
+                InlineKeyboardButton.WithCallbackData("Geolocation", $"{NAME}.{GEO}"),
             },
             new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData("Banks", $"{Name}.{BANKS}"),
+                InlineKeyboardButton.WithCallbackData("Banks", $"{NAME}.{BANKS}"),
             },
             new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData("Best currencies", $"{Name}.{CURR}"),
-                InlineKeyboardButton.WithCallbackData("Best near currencies", $"{Name}.{CURR}.{CURR_NEAR}"),
+                InlineKeyboardButton.WithCallbackData("Best currencies", $"{NAME}.{CURR}"),
+                InlineKeyboardButton.WithCallbackData("Best near currencies", $"{NAME}.{CURR}.{CURR_NEAR}"),
             }
         };
 
         InlineKeyboardMarkup keyboard = new(buttons);
         return keyboard;
     }
-    public async Task HandleAsync(string[] args, int messageId)
+    
+    public MainMenu(Bot bot, string[] args) : base(bot)
     {
-        string arg1 = args[1];
+        _args = args;
+    }
+    private readonly string[] _args;
+
+    public override async Task HandleAsync()
+    {
+        string arg1 = _args[1];
 
         Func<Task> action = arg1 switch
         {
@@ -64,7 +60,7 @@ public class MainMenu
 
         Task CurrMennu()
         {
-            if (args.Length > 2)
+            if (_args.Length > 2)
             {
                 NearCurr();
             }
@@ -88,11 +84,11 @@ public class MainMenu
         async Task BanksHandle()
         {
 #warning Implement BanksHandle
-            await Bot.BotClient.EditMessageTextAsync(_bot.Id, messageId, "ABC");
+            await Bot.BotClient.EditMessageTextAsync(Bot.Id, Bot.MessageId, "ABC");
         }
         Task UnknowHandle()
         {
-            throw new Exception($"'{args[1]}' not implemented");
+            throw new Exception($"'{_args[1]}' not implemented");
         }
         async Task GeolocationHandle()
         {
@@ -103,7 +99,7 @@ public class MainMenu
             {
                 ResizeKeyboard = true,
             };
-            await _bot.SendMessageAsync("Send your Geo\nOr send '/remove_keyboard' to remove keyboard", replyMarkup: replyKeyboardMarkup);
+            await Bot.SendMessageAsync("Send your Geo\nOr send '/remove_keyboard' to remove keyboard", replyMarkup: replyKeyboardMarkup);
         }
     }
 }

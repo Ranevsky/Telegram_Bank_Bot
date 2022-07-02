@@ -12,6 +12,7 @@ public abstract class Bot
     public static ITelegramBotClient BotClient { get; private set; }
     public long Id { get; private set; }
     public Message Message { get; private set; }
+    public int MessageId { get; private set; }
     static Bot()
     {
         string token = Program.Configuration.GetSection("Telegram")["Token"];

@@ -7,7 +7,8 @@
 appsettings.json
 Todo.txt
 hierarchy.txt
-
+Migrations/
+*.db
 
 # User-specific files
 *.rsuser

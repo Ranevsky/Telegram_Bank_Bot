@@ -29,9 +29,18 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         return await Db.Users.FirstOrDefaultAsync(u => u.Id == entity.Id);
     }
+
+    public override async Task<User?> FindAsync(long id)
+    {
+        return await Db.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
     public override async Task<User?> FindNoTrackingAsync(User entity)
     {
         return await Db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == entity.Id);
     }
-
+    public override async Task<User?> FindNoTrackingAsync(long id)
+    {
+        return await Db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+    }
 }

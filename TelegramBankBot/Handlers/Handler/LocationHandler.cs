@@ -12,10 +12,20 @@ public class LocationHandler : Handler
     }
     public override async Task HandleAsync()
     {
-        Message? msg = await Bot.SendMessageAsync(
+        await Bot.SendMessageAsync(
             text: "Reply keyboard removed",
             replyMarkup: new ReplyKeyboardRemove());
 
-        Console.WriteLine($"Latitude: {_location.Latitude}, Longitude: {_location.Longitude}");
+        var user = await Program.UOW.Users.FindAsync(Bot.Id);        
+        
+        if (user == null)
+        {
+            throw new Exception("User is not exist in db, but used location");
+        }
+
+        user.Location = Program.Mapper.Map<TelegramBankBot.Model.Location>(_location);
+        await Program.UOW.SaveAsync();
+        
+        Console.WriteLine($"Latitude: {user.Location.Latitude}, Longitude: {user.Location.Longitude}");
     }
 }

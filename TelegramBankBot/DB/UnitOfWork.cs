@@ -26,6 +26,8 @@ internal class UnitOfWork : IUnitOfWork
     public async Task SaveAsync()
     {
         await db.SaveChangesAsync();
+#warning delete log
+        Program.Log.Info("Save");
     }
 
     private bool disposed = false;

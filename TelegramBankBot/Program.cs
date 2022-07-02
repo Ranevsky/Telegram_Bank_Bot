@@ -23,6 +23,8 @@ public class Program
     public static ILogger Log { get; private set; } = null!;
     public static async Task Main()
     {
+        Console.WriteLine(Directory.GetCurrentDirectory());
+        
         Log = new ConsoleLogger();
 
         GetConfiguration();
@@ -40,7 +42,11 @@ public class Program
     private static void GetConfiguration()
     {
         ConfigurationBuilder? builder = new();
-        builder.SetBasePath(Directory.GetCurrentDirectory());
+
+        string path = Directory.GetCurrentDirectory();
+        path = path.Substring(0, path.IndexOf("\\bin"));
+        builder.SetBasePath(path);
+
         builder.AddJsonFile("appsettings.json");
         Configuration = builder.Build();
     }

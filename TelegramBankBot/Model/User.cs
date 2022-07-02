@@ -10,4 +10,5 @@ public class User : IEntityId
     [Key]
     public long Id { get; set; }
     public string Name { get; set; } = null!;
+    public Location? Location { get; set; }
 }

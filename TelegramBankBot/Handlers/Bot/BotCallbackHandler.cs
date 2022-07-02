@@ -1,6 +1,6 @@
 ﻿using Telegram.Bot.Types;
 
-using TelegramBankBot.Menu;
+using TelegramBankBot.Handlers.Menu;
 
 namespace TelegramBankBot.Handlers;
 
@@ -12,17 +12,15 @@ public class BotCallbackHandler : Bot
         : base(callbackQuery.Message ?? throw new NullReferenceException(nameof(callbackQuery)))
     {
         _callback = callbackQuery;
-
-        InitializeDictionary();
     }
 
 
-    private void InitializeDictionary()
+    private void InitializeDictionary(string[] args)
     {
         dict = new()
         {
-#warning retunr instance and use abstraction (instance).HandleAsync();
-            { nameof(MainMenu), async (args, messageId) => { await new MainMenu(this).HandleAsync(args, messageId); } }
+#warning return instance and use abstraction (instance).HandleAsync();
+            { nameof(MainMenu), new MainMenu(this, args) }
         };
     }
 
@@ -33,23 +31,21 @@ public class BotCallbackHandler : Bot
     }
     #endregion
 
-    private Dictionary<string, Func<string[], int, Task>> dict = null!;
+    private Dictionary<string, MenuHandler> dict = null!;
     public override async Task HandleAsync()
     {
         Message msg = _callback.Message!;
-        // Data -> Id кнопки?
-        // Text -> Текст сообщения
-        // MessageId -> Id сообщения
+
         string text = $"{msg.Text} {msg.MessageId} {_callback.Data}";
         Log.Info(text);
 
-
         string[] args = _callback.Data!.Split('.');
+        InitializeDictionary(args);
         try
         {
-            if (dict.TryGetValue(args[0], out Func<string[], int, Task>? act))
+            if (dict.TryGetValue(args[0], out var instace))
             {
-                await act.Invoke(args, msg.MessageId);
+                await instace.HandleAsync();
             }
             else
             {

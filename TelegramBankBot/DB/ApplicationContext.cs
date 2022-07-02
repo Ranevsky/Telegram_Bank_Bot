@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 using TelegramBankBot.Model;
 
@@ -6,16 +7,18 @@ namespace TelegramBankBot.DB;
 
 public class ApplicationContext : DbContext
 {
-    private static readonly string _connection = Program.Configuration.GetSection("ConnectionStrings")["DefaultConnection"];
-    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Location> Locations => Set<Location>();
 
-    public ApplicationContext() : base()
-    {
-        Database.EnsureCreated();
-    }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlite(_connection);
+    {  
         base.OnConfiguring(optionsBuilder);
+
+        ConfigurationBuilder? builder = new ConfigurationBuilder();
+
+        builder.AddJsonFile("appsettings.json");
+        IConfigurationRoot? config = builder.Build();
+        string connectionString = config.GetConnectionString("DefaultConnection");
+        optionsBuilder.UseSqlite(connectionString);
     }
 }

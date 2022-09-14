@@ -4,10 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # Ignore
-appsettings.json
 Todo.txt
 hierarchy.txt
-Migrations/
 *.db
 
 # User-specific files

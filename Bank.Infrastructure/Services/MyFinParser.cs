@@ -49,25 +49,17 @@ public class MyFinParser : IBankParser
             // 7 -> EUR->USD Buy
             // 8 -> EUR->USD Sell
 
-            var currencies = new Currency[]
-            {
-                new Usd(),
-                new Eur(),
-                new Rub(),
-                new EurToUsd()
-            };
-
             if (classType.Contains("static c-currency-table__main-row"))
             {
-                ParseInternetBank(bankNode, bankList, currencies);
+                ParseInternetBank(bankNode, bankList);
             }
             else if (classType.Contains("c-currency-table__main-row"))
             {
-                ParseBank(bankNode, bank, ref bankId, currencies);
+                ParseBank(bankNode, bank, ref bankId);
             }
             else if (classType.Contains("c-currency-table__additional-row"))
             {
-                ParseDepartments(bankNode, bankList, bank, city, bankId, currencies);
+                ParseDepartments(bankNode, bankList, bank, city, bankId);
                 bank = new Domain.Entities.Bank();
             }
         }
@@ -76,7 +68,7 @@ public class MyFinParser : IBankParser
             ? throw new HtmlParseException("Bank not found")
             : bankList;
 
-        static void ParseInternetBank(HtmlNode bankNode, List<Domain.Entities.Bank> bankList, Currency[] currencies)
+        static void ParseInternetBank(HtmlNode bankNode, List<Domain.Entities.Bank> bankList)
         {
             // Internet bank
 
@@ -120,14 +112,28 @@ public class MyFinParser : IBankParser
                 internetBank.FullName = sb.ToString();
             }
 
-            var currencyExchange = GetCurrency(currencies, information);
+            Currency?[] currencies =
+            {
+                Convert<Usd>(information[1], information[2]),
+                Convert<Eur>(information[3], information[4]),
+                Convert<Rub>(information[5], information[6]),
+                Convert<EurToUsd>(information[7], information[8])
+            };
 
-            internetBank.BestCurrencies.AddRange(currencyExchange);
+            foreach (var currency in currencies)
+            {
+                if (currency is null)
+                {
+                    continue;
+                }
+
+                internetBank.BestCurrencies.Add(currency);
+            }
 
             bankList.Add(internetBank);
         }
 
-        static void ParseBank(HtmlNode bankNode, Domain.Entities.Bank bank, ref string bankId, Currency[] currencies)
+        static void ParseBank(HtmlNode bankNode, Domain.Entities.Bank bank, ref string bankId)
         {
             // Bank
 
@@ -154,9 +160,23 @@ public class MyFinParser : IBankParser
                 throw new HtmlParseException("Not found bank name");
             }
 
-            var currencyExchange = GetCurrency(currencies, information);
+            Currency?[] currencies =
+            {
+                Convert<Usd>(information[1], information[2]),
+                Convert<Eur>(information[3], information[4]),
+                Convert<Rub>(information[5], information[6]),
+                Convert<EurToUsd>(information[7], information[8])
+            };
 
-            bank.BestCurrencies.AddRange(currencyExchange);
+            foreach (var currency in currencies)
+            {
+                if (currency is null)
+                {
+                    continue;
+                }
+
+                bank.BestCurrencies.Add(currency);
+            }
         }
 
         static void ParseDepartments(
@@ -164,8 +184,7 @@ public class MyFinParser : IBankParser
             List<Domain.Entities.Bank> bankList,
             Domain.Entities.Bank bank,
             City city,
-            string bankId,
-            Currency[] currencies)
+            string bankId)
         {
             // Departments
 
@@ -216,15 +235,26 @@ public class MyFinParser : IBankParser
 
                 information[0] = street;
 
-                var department = new Department
+                Department department = new() { City = city };
+                department.Street = information[0];
+
+                Currency?[] currencies =
                 {
-                    City = city,
-                    Street = information[0]
+                    Convert<Usd>(information[1], information[2]),
+                    Convert<Eur>(information[3], information[4]),
+                    Convert<Rub>(information[5], information[6]),
+                    Convert<EurToUsd>(information[7], information[8])
                 };
 
-                var currencyExchange = GetCurrency(currencies, information);
+                foreach (var currency in currencies)
+                {
+                    if (currency is null)
+                    {
+                        continue;
+                    }
 
-                department.Currencies.AddRange(currencyExchange);
+                    department.Currencies.Add(currency);
+                }
 
                 bank.Departments.Add(department);
             }
@@ -245,7 +275,7 @@ public class MyFinParser : IBankParser
         }
     }
 
-    private static CurrencyExchange? SetValue(Currency currency, string? buy, string? sell)
+    private static Currency? Convert<T>(string? buy, string? sell) where T : Currency, new()
     {
         if (buy is null || sell is null)
         {
@@ -262,36 +292,17 @@ public class MyFinParser : IBankParser
             return null;
         }
 
-        var currencyExchange = new CurrencyExchange
+        Currency currency = new T
         {
-            Currency = currency,
             Buy = buyDec,
             Sell = sellDec
         };
 
-        return currencyExchange;
+        return currency;
 
         static bool TryParse(string text, out decimal value, IFormatProvider provider)
         {
             return decimal.TryParse(text, NumberStyles.Currency, provider, out value);
         }
-    }
-
-    private static IEnumerable<CurrencyExchange> GetCurrency(IEnumerable<Currency> currencies, string[] information)
-    {
-        var iteration = 0;
-        var curr = new List<CurrencyExchange>(information.Length / 2);
-        foreach (var currency in currencies)
-        {
-            var a = SetValue(currency, information[iteration + 1], information[iteration + 2]);
-            if (a is not null)
-            {
-                curr.Add(a);
-            }
-
-            iteration += 2;
-        }
-
-        return curr;
     }
 }

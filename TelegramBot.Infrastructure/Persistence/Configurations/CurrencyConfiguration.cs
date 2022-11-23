@@ -11,6 +11,12 @@ public class CurrencyConfiguration : IEntityTypeConfiguration<Currency>
     {
         builder.Property(u => u.Id).ValueGeneratedOnAdd();
 
+        // 123.12345
+        const int scale = 5;
+        const int precision = 8;
+        builder.Property(c => c.Buy).HasPrecision(precision, scale);
+        builder.Property(c => c.Sell).HasPrecision(precision, scale);
+
         builder.HasMany<User>()
             .WithOne(u => u.SelectedCurrency)
             .OnDelete(DeleteBehavior.SetNull);

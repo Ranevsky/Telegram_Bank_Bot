@@ -73,23 +73,6 @@ namespace Bank.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Currencies");
-                });
-
-            modelBuilder.Entity("Bank.Domain.Entities.CurrencyExchange", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
                     b.Property<int?>("BankId")
                         .HasColumnType("int");
 
@@ -97,11 +80,12 @@ namespace Bank.Infrastructure.Migrations
                         .HasPrecision(8, 5)
                         .HasColumnType("decimal(8,5)");
 
-                    b.Property<int>("CurrencyId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Sell")
                         .HasPrecision(8, 5)
@@ -111,11 +95,9 @@ namespace Bank.Infrastructure.Migrations
 
                     b.HasIndex("BankId");
 
-                    b.HasIndex("CurrencyId");
-
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("CurrencyExchange");
+                    b.ToTable("Currencies");
                 });
 
             modelBuilder.Entity("Bank.Domain.Entities.Department", b =>
@@ -179,25 +161,17 @@ namespace Bank.Infrastructure.Migrations
                     b.ToTable("Locations");
                 });
 
-            modelBuilder.Entity("Bank.Domain.Entities.CurrencyExchange", b =>
+            modelBuilder.Entity("Bank.Domain.Entities.Currency", b =>
                 {
                     b.HasOne("Bank.Domain.Entities.Bank", null)
                         .WithMany("BestCurrencies")
                         .HasForeignKey("BankId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("Bank.Domain.Entities.Currency", "Currency")
-                        .WithMany()
-                        .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Bank.Domain.Entities.Department", null)
                         .WithMany("Currencies")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Currency");
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Bank.Domain.Entities.Department", b =>

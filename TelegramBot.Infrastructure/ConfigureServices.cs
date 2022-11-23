@@ -35,23 +35,20 @@ public static class ConfigureServices
 
         return services;
     }
-
     private static IServiceCollection AddTelegramRepositories(this IServiceCollection services)
     {
         services.AddUserRepository();
         services.AddTelegramCurrencyRepository();
         services.AddUnitOfWork();
-
+        
         return services;
     }
-
     private static IServiceCollection AddUserRepository(this IServiceCollection services)
     {
         services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }
-
     private static IServiceCollection AddTelegramCurrencyRepository(this IServiceCollection services)
     {
         services.AddScoped<ITelegramCurrencyRepository, TelegramCurrencyRepository>();

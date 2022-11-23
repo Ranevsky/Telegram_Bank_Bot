@@ -12,6 +12,6 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
 
         builder.HasMany(d => d.Currencies)
             .WithOne()
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

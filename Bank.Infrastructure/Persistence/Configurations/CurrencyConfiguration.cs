@@ -10,6 +10,10 @@ public class CurrencyConfiguration : IEntityTypeConfiguration<Currency>
     {
         builder.Property(c => c.Id).ValueGeneratedOnAdd();
 
-        builder.HasMany<CurrencyExchange>().WithOne(e => e.Currency).OnDelete(DeleteBehavior.Cascade);
+        // 123.12345
+        const int scale = 5;
+        const int precision = 8;
+        builder.Property(c => c.Buy).HasPrecision(precision, scale);
+        builder.Property(c => c.Sell).HasPrecision(precision, scale);
     }
 }

@@ -29,8 +29,8 @@ public class BestCurrencyExchange : Handler<CallbackArgs>
             IOrderedEnumerable<DepartmentByDistance> Order(IEnumerable<DepartmentByDistance> model)
             {
                 var basicOrder = isBuyOperation
-                    ? model.OrderBy(x => x.CurrencyExchange.Buy)
-                    : model.OrderByDescending(x => x.CurrencyExchange.Sell);
+                    ? model.OrderBy(x => x.Currency.Buy)
+                    : model.OrderByDescending(x => x.Currency.Sell);
 
                 return basicOrder.ThenBy(x => x.Distance);
             }

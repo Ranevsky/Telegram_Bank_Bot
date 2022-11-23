@@ -96,7 +96,7 @@ public class GetExchange
         var buttons = new List<InlineKeyboardButton[]>();
         foreach (var department in departments.Departments)
         {
-            var currency = department.Currency;
+            var currency = department.CurrencyExchange;
             var text =
                 $"{department.Distance * 1000:f0} {department.Department.Bank.Name}\n{currency.Buy.ToString("F")} | {currency.Sell.ToString("F")}";
             // \n{department.Department.Street}

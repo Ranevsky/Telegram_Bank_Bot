@@ -39,7 +39,8 @@ public class DepartmentCallback : Handler<CallbackArgs>
             // Distance
             // current curr
             var curr =
-                department.Currencies.FirstOrDefault(c => c.Name.ToUpper() == userDb.SelectedCurrency!.Name.ToUpper())!;
+                department.Currencies.FirstOrDefault(c =>
+                    c.Currency.Name.ToUpper() == userDb.SelectedCurrency!.Name.ToUpper())!;
 
             Location userLocation = new()
                 { Longitude = userDb.Location.Longitude, Latitude = userDb.Location.Latitude };
@@ -51,7 +52,7 @@ public class DepartmentCallback : Handler<CallbackArgs>
                 $"Street: {department.Street}\n" +
                 //"Format: Currency: Buy | Sell\n" +
                 //$"{curr.Name}: {curr.Buy} | {curr.Sell}";
-                $"Currency: {curr.Name}\n" +
+                $"Currency: {curr.Currency.Name}\n" +
                 $"Buy: {curr.Buy}\n" +
                 $"Sell: {curr.Sell}";
 

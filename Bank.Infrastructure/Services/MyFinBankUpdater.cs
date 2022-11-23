@@ -2,7 +2,7 @@
 
 public class MyFinBankUpdater : BankUpdater
 {
-    public MyFinBankUpdater(MyFinParser parser, MyFinChecker checker)
+    public MyFinBankUpdater(MyFinParser parser, BankChecker checker)
         : base(parser, checker)
     {
     }

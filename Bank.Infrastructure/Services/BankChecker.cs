@@ -5,12 +5,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Bank.Infrastructure.Services;
 
-public class MyFinChecker : IBankChecker
+public class BankChecker : IBankChecker
 {
     private readonly IBankContext _db;
-    private readonly ILogger<MyFinChecker> _logger;
+    private readonly ILogger<BankChecker> _logger;
 
-    public MyFinChecker(IBankContext db, ILogger<MyFinChecker> logger)
+    public BankChecker(IBankContext db, ILogger<BankChecker> logger)
     {
         _db = db;
         _logger = logger;
@@ -21,9 +21,10 @@ public class MyFinChecker : IBankChecker
         _logger.LogTrace("Checking banks");
         var banksInDb = _db.Banks
             .Include(b => b.BestCurrencies)
-            .Include(b => b.Departments.Where(d => d.City == city))
             // Todo: look, compares from reference, but not name value
+            .Include(b => b.Departments.Where(d => d.City == city))
             .ThenInclude(d => d.Currencies)
+            .ThenInclude(c => c.Currency)
             .ToList();
 
         foreach (var bankInDb in banksInDb)
@@ -41,13 +42,15 @@ public class MyFinChecker : IBankChecker
             // Best currencies
             foreach (var bestCurrInDb in bankInDb.BestCurrencies)
             {
-                var newBestCurr = newBank.BestCurrencies.FirstOrDefault(c => c.Name == bestCurrInDb.Name);
+                var newBestCurr =
+                    newBank.BestCurrencies.FirstOrDefault(c => c.Currency.Name == bestCurrInDb.Currency.Name);
 
                 // If the currency is not found in the database (it means deleted), delete
                 if (newBestCurr is null)
                 {
-                    _db.Currencies.Remove(bestCurrInDb);
-                    _logger.LogWarning("Remove best currencies '{Name}' in bank '{FullName}'", bestCurrInDb.Name,
+                    _db.CurrencyExchange.Remove(bestCurrInDb);
+                    _logger.LogWarning("Remove best currencies '{Name}' in bank '{FullName}'",
+                        bestCurrInDb.Currency.Name,
                         bankInDb.FullName);
                     continue;
                 }
@@ -55,16 +58,16 @@ public class MyFinChecker : IBankChecker
                 if (bestCurrInDb.Buy != newBestCurr.Buy)
                 {
                     _logger.LogInformation(
-                        "Change best currency (Buy) '{Name}' in bank '{FullName}', before '{BeforeBuy}', after '{AfterBuy}'",
-                        bestCurrInDb.Name, bankInDb.FullName, bestCurrInDb.Buy, newBestCurr.Buy);
+                        "Change best currency ({Action}) '{Name}' in bank '{FullName}', before '{BeforeBuy}', after '{AfterBuy}'",
+                        "Buy", bestCurrInDb.Currency.Name, bankInDb.FullName, bestCurrInDb.Buy, newBestCurr.Buy);
                     bestCurrInDb.Buy = newBestCurr.Buy;
                 }
 
                 if (bestCurrInDb.Sell != newBestCurr.Sell)
                 {
                     _logger.LogInformation(
-                        "Change best currency (Sell) '{Name}' in bank '{FullName}', before '{BeforeSell}', after '{AfterSell}'",
-                        bestCurrInDb.Name, bankInDb.FullName, bestCurrInDb.Sell, newBestCurr.Sell);
+                        "Change best currency ({Action}) '{Name}' in bank '{FullName}', before '{BeforeSell}', after '{AfterSell}'",
+                        "Sell", bestCurrInDb.Currency.Name, bankInDb.FullName, bestCurrInDb.Sell, newBestCurr.Sell);
                     bestCurrInDb.Sell = newBestCurr.Sell;
                 }
 
@@ -85,30 +88,32 @@ public class MyFinChecker : IBankChecker
 
                 foreach (var currencyInDb in departmentInDb.Currencies)
                 {
-                    var newCurrency = newDepartment.Currencies.FirstOrDefault(c => c.Name == currencyInDb.Name);
+                    var newCurrency =
+                        newDepartment.Currencies.FirstOrDefault(c => c.Currency.Name == currencyInDb.Currency.Name);
 
                     if (newCurrency is null)
                     {
-                        _db.Currencies.Remove(currencyInDb);
+                        _db.CurrencyExchange.Remove(currencyInDb);
                         _logger.LogWarning(
                             "Remove currency '{Name}' in department with id = '{Id}', in bank '{FullName}'",
-                            currencyInDb.Name, departmentInDb.Id, bankInDb.FullName);
+                            currencyInDb.Currency.Name, departmentInDb.Id, bankInDb.FullName);
                         continue;
                     }
 
                     if (currencyInDb.Buy != newCurrency.Buy)
                     {
                         _logger.LogInformation(
-                            "Change currency (Buy) '{Name}' in department with id = '{Id}', in bank '{FullName}', before '{Buy}', after '{NewCurrencyBuy}'",
-                            currencyInDb.Name, departmentInDb.Id, bankInDb.FullName, currencyInDb.Buy, newCurrency.Buy);
+                            "Change currency ({Action}) '{Name}' in department with id = '{Id}', in bank '{FullName}', before '{Buy}', after '{NewCurrencyBuy}'",
+                            "Buy", currencyInDb.Currency.Name, departmentInDb.Id, bankInDb.FullName, currencyInDb.Buy,
+                            newCurrency.Buy);
                         currencyInDb.Buy = newCurrency.Buy;
                     }
 
                     if (currencyInDb.Sell != newCurrency.Sell)
                     {
                         _logger.LogInformation(
-                            "Change currency (Sell) '{Name}' in department with id = '{Id}', in bank '{FullName}', before '{Sell}', after '{NewCurrencySell}'",
-                            currencyInDb.Name, departmentInDb.Id, bankInDb.FullName, currencyInDb.Sell,
+                            "Change currency ({Action}) '{Name}' in department with id = '{Id}', in bank '{FullName}', before '{Sell}', after '{NewCurrencySell}'",
+                            "Sell", currencyInDb.Currency.Name, departmentInDb.Id, bankInDb.FullName, currencyInDb.Sell,
                             newCurrency.Sell);
                         currencyInDb.Sell = newCurrency.Sell;
                     }
@@ -129,7 +134,7 @@ public class MyFinChecker : IBankChecker
                 {
                     bankInDb.BestCurrencies.Add(bestCurrency);
                     _logger.LogInformation("Add best currency '{BestCurrencyName}' in bank '{FullName}'",
-                        bestCurrency.Name, bankInDb.FullName);
+                        bestCurrency.Currency.Name, bankInDb.FullName);
                 }
             }
 
@@ -156,7 +161,7 @@ public class MyFinChecker : IBankChecker
                         departmentInDb.Currencies.Add(currency);
                         _logger.LogInformation(
                             "Add currency '{CurrencyName}' in department with id = '{Id}', in bank '{FullName}'",
-                            currency.Name,
+                            currency.Currency.Name,
                             departmentInDb.Id,
                             bankInDb.FullName);
                     }

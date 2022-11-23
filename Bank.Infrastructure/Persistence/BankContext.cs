@@ -17,6 +17,7 @@ public class BankContext : DbContext, IBankContext
     public DbSet<Domain.Entities.Bank> Banks => Set<Domain.Entities.Bank>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Currency> Currencies => Set<Currency>();
+    public DbSet<CurrencyExchange> CurrencyExchange => Set<CurrencyExchange>();
     public DbSet<City> Cities => Set<City>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,5 +28,6 @@ public class BankContext : DbContext, IBankContext
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
         modelBuilder.ApplyConfiguration(new LocationConfiguration());
         modelBuilder.ApplyConfiguration(new CurrencyConfiguration());
+        modelBuilder.ApplyConfiguration(new CurrencyExchangeConfiguration());
     }
 }

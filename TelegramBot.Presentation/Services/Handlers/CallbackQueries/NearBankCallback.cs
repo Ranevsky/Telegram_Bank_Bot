@@ -50,8 +50,8 @@ public class NearBankCallback : Handler<CallbackArgs>
                 var basicOrder = model.OrderBy(x => x.Distance);
 
                 return isBuyOperation
-                    ? basicOrder.ThenBy(x => x.Currency.Buy)
-                    : basicOrder.ThenByDescending(x => x.Currency.Sell);
+                    ? basicOrder.ThenBy(x => x.CurrencyExchange.Buy)
+                    : basicOrder.ThenByDescending(x => x.CurrencyExchange.Sell);
             }
 
             await _getExchange.GetFormsAsync(args, Order, Name, page, take);

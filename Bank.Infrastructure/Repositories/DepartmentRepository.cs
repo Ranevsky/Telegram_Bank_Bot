@@ -74,19 +74,19 @@ public class DepartmentRepository : IDepartmentRepository
         currName = currName.ToUpper();
 
         var collections = _db.Banks
-            .Include(b => b.Departments.Where(d => d.Currencies.Exists(c => c.Name.ToUpper() == currName)))
+            .Include(b => b.Departments.Where(d => d.Currencies.Exists(c => c.Currency.Name.ToUpper() == currName)))
             .ThenInclude(d => d.Location)
             .Where(b => b.Departments.Count != 0)
             .SelectMany(b => b.Departments.Where(d => d.Location != null))
             .Include(d => d.City)
             .Include(d => d.Bank)
-            .Include(d => d.Currencies.Where(c => c.Name.ToUpper() == currName))
+            .Include(d => d.Currencies.Where(c => c.Currency.Name.ToUpper() == currName))
             .AsEnumerable()
             .Select(d => new DepartmentByDistance
             {
                 Distance = Location.Distance(d.Location!, location),
                 Department = d,
-                Currency = d.Currencies.First()
+                CurrencyExchange = d.Currencies.First()
             })
             .Where(d => d.Distance <= d.Department.City.Radius);
 

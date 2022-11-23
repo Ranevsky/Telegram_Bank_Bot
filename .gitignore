@@ -8,6 +8,7 @@ obj/
 
 .idea
 *.txt
+*DotSettings*
 
 # Common node modules locations
 /node_modules

@@ -2,12 +2,13 @@
 
 namespace TelegramBot.Application.Interfaces;
 
-public interface IUnitOfWork : IDisposable
+public interface IUnitOfWork
 {
     IUserRepository Users { get; }
     ITelegramCurrencyRepository TelegramCurrencies { get; }
     IBankRepository Banks { get; }
     IDepartmentRepository Departments { get; }
+    ICityRepository Cities { get; }
     bool TelegramDbHasChanged { get; }
 
     Task SaveAsync();

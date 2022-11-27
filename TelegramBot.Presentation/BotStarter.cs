@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Bank.Application.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -16,23 +18,18 @@ namespace TelegramBot.Presentation;
 public class BotStarter
 {
     private readonly ITelegramBotClient _bot;
-    private readonly Handler<Update> _handler;
     private readonly ILogger<BotStarter> _logger;
-    private readonly IMapper _mapper;
-    private readonly IUnitOfWork _uow;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public BotStarter(
-        Handler<Update> handler,
         ITelegramBotClient botClient,
-        IUnitOfWork uow,
-        IMapper mapper,
-        ILogger<BotStarter> logger)
+        ILogger<BotStarter> logger,
+        IServiceScopeFactory scopeFactory
+    )
     {
         _bot = botClient;
         _logger = logger;
-        _uow = uow;
-        _mapper = mapper;
-        _handler = handler;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task StartBotAsync()
@@ -71,7 +68,7 @@ public class BotStarter
             _ => exception.ToString()
         };
 
-        _logger.LogError(errorMessage);
+        _logger.LogError("{Msg}", errorMessage);
         return Task.CompletedTask;
     }
 
@@ -80,9 +77,14 @@ public class BotStarter
         Update update,
         CancellationToken cancellationToken)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<Handler<Update>>();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
+
         try
         {
-            await _handler.HandleAsync(update);
+            await handler.HandleAsync(update);
         }
         catch (HandlerNotFoundException)
         {
@@ -95,16 +97,20 @@ public class BotStarter
                 ex.User.FirstName,
                 ex.User.Id);
 
-            var user = _mapper.Map<User>(ex.User);
+            var user = mapper.Map<User>(ex.User);
 
-            await _uow.Users.AddAsync(user);
-            await _uow.SaveAsync();
+            await uow.Users.AddAsync(user);
+            await uow.SaveAsync();
 
             await HandleUpdateAsync(botClient, update, cancellationToken);
         }
         catch (NearCityNotFoundException ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError("{Msg}", ex.Message);
+        }
+        catch (CityNotSupportedException ex)
+        {
+            _logger.LogError("{Msg}", ex.Message);
         }
         catch (ApiRequestException ex)
         {

@@ -6,6 +6,7 @@ namespace Bank.Application.Interfaces;
 public interface IBankContext : IDisposable
 {
     DbSet<Domain.Entities.Bank> Banks { get; }
+    DbSet<InternetBank> InternetBanks { get; }
     DbSet<Department> Departments { get; }
     DbSet<Currency> Currencies { get; }
     DbSet<CurrencyExchange> CurrencyExchange { get; }

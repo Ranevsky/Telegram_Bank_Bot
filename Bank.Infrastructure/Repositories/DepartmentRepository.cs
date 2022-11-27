@@ -44,6 +44,7 @@ public class DepartmentRepository : IDepartmentRepository
         var department = await _db.Departments
             .Include(d => d.Location)
             .Include(d => d.Currencies)
+            .ThenInclude(c => c.Currency)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         return department;
@@ -55,6 +56,7 @@ public class DepartmentRepository : IDepartmentRepository
             .Include(d => d.Bank)
             .Include(d => d.Location)
             .Include(d => d.Currencies)
+            .ThenInclude(c => c.Currency)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         return department;
@@ -71,16 +73,14 @@ public class DepartmentRepository : IDepartmentRepository
             await _updateExchange.UpdateAsync(cityName);
         }
 
-        currName = currName.ToUpper();
-
         var collections = _db.Banks
-            .Include(b => b.Departments.Where(d => d.Currencies.Exists(c => c.Currency.Name.ToUpper() == currName)))
+            .Include(b => b.Departments.Where(d => d.Currencies.Exists(c => c.Currency.Name == currName)))
             .ThenInclude(d => d.Location)
             .Where(b => b.Departments.Count != 0)
             .SelectMany(b => b.Departments.Where(d => d.Location != null))
             .Include(d => d.City)
             .Include(d => d.Bank)
-            .Include(d => d.Currencies.Where(c => c.Currency.Name.ToUpper() == currName))
+            .Include(d => d.Currencies.Where(c => c.Currency.Name == currName))
             .AsEnumerable()
             .Select(d => new DepartmentByDistance
             {

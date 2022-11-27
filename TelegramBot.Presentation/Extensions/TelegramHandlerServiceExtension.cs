@@ -34,14 +34,16 @@ public static class TelegramHandlerServiceExtension
         return services;
     }
 
-    private static void AddHandler<T>(IServiceCollection services) where T : class
+    private static void AddHandler<THandler>(IServiceCollection services)
+        where THandler : class
     {
-        services.AddSingleton<T>();
+        services.AddScoped<THandler>();
     }
 
-    private static void AddHandler<T>(IServiceCollection services, Func<IServiceProvider, T> factory) where T : class
+    private static void AddHandler<THandler>(IServiceCollection services, Func<IServiceProvider, THandler> factory)
+        where THandler : class
     {
-        services.AddSingleton(factory);
+        services.AddScoped(factory);
     }
 
     public static IServiceCollection AddCallbackHandlers(this IServiceCollection services)
@@ -149,6 +151,8 @@ public static class TelegramHandlerServiceExtension
             return removeCommand;
         });
         AddHandler<TestCommand>(services);
+        AddHandler<UpdateCityCommand>(services);
+        AddHandler<CheckCityCommand>(services);
 
         // Handler<CommandArgs>
         AddHandler(services, serviceProvider =>
@@ -156,9 +160,13 @@ public static class TelegramHandlerServiceExtension
             Handler<CommandArgs> registerCommand = serviceProvider.GetRequiredService<StartCommand>();
             Handler<CommandArgs> removeKeyboardCommand = serviceProvider.GetRequiredService<RemoveCommand>();
             Handler<CommandArgs> testCommand = serviceProvider.GetRequiredService<TestCommand>();
+            Handler<CommandArgs> updateCityCommand = serviceProvider.GetRequiredService<UpdateCityCommand>();
+            Handler<CommandArgs> checkCityCommand = serviceProvider.GetRequiredService<CheckCityCommand>();
 
             registerCommand.Successor = removeKeyboardCommand;
             removeKeyboardCommand.Successor = testCommand;
+            testCommand.Successor = updateCityCommand;
+            updateCityCommand.Successor = checkCityCommand;
 
             return registerCommand;
         });

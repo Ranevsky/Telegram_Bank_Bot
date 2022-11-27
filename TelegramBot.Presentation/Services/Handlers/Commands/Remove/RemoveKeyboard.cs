@@ -53,7 +53,7 @@ public class RemoveKeyboard : Handler<CommandArgs>
 
     public override async Task HandleAsync(CommandArgs args)
     {
-        if (args.Args[1] == CommandName)
+        if (args.GetArg() == CommandName)
         {
             await RemoveKeyboardAsync(_bot, null, args.ChatId);
         }

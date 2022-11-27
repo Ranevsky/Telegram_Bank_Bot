@@ -63,6 +63,10 @@ public class GoogleGeocodingApi : IGeocodingAsync
 
         client.BaseAddress = new Uri(Url);
         var response = await client.GetAsync(query);
+
+        _logger.LogInformation("Used {ProviderService} api ({Service}) with address = '{Address}'", "google",
+            "geocoding", address);
+
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync();
@@ -71,7 +75,6 @@ public class GoogleGeocodingApi : IGeocodingAsync
         var status = json["status"]?.GetValue<string>()
                      ?? throw new JsonNotFoundItemException("status");
 
-        _logger.LogInformation("Used google api (geocoding) with address = '{Address}'", address);
         switch (status)
         {
             case "OK":

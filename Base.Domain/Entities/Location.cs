@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Base.Domain.Entities;
+﻿namespace Base.Domain.Entities;
 
 public class Location
 {
@@ -8,13 +6,6 @@ public class Location
     public double Latitude { get; set; }
 
     public double Longitude { get; set; }
-
-    // Todo: jsonIgnore to notmapped or ignore
-    [JsonIgnore]
-    public long? UserId { get; set; }
-
-    [JsonIgnore]
-    public int? CityId { get; set; }
 
     public static double Distance(Location location1, Location location2)
     {

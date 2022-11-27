@@ -3,13 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Bank.Infrastructure.Services.HtmlDocuments;
 
-public class GetterMyFinHtmlDocument : GetterHtmlDocFromUrl
+public class MyFinGetterHtmlDocument : GetterHtmlDocFromUrl
 {
     private new const string Url = "https://myfin.by";
-    private readonly ILogger<GetterMyFinHtmlDocument> _logger;
+    private readonly ILogger<MyFinGetterHtmlDocument> _logger;
     private string? _object;
 
-    public GetterMyFinHtmlDocument(ILogger<GetterMyFinHtmlDocument> logger)
+    public MyFinGetterHtmlDocument(ILogger<MyFinGetterHtmlDocument> logger)
         : base(Url)
     {
         _logger = logger;
@@ -27,7 +27,7 @@ public class GetterMyFinHtmlDocument : GetterHtmlDocFromUrl
     {
         get
         {
-            _logger.LogInformation("Load website 'MyFin'");
+            _logger.LogInformation("Load website '{WebSite}', path '{Path}'", "MyFin", Object);
             return base.Document;
         }
     }

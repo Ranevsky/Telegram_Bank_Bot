@@ -16,9 +16,10 @@ public class RemoveCommand : Handler<CommandArgs>
 
     public override async Task HandleAsync(CommandArgs commandArgs)
     {
-        if (commandArgs.Args[0] == CommandName)
+        if (commandArgs.GetArg() == CommandName)
         {
-            if (commandArgs.Args.Length <= 1)
+            var iteration = ++commandArgs.ArgsIteration;
+            if (commandArgs.Args.Length - commandArgs.ArgsIteration < 1)
             {
                 throw new CommandArgumentNotFoundException();
             }
@@ -29,7 +30,7 @@ public class RemoveCommand : Handler<CommandArgs>
             }
             catch (HandlerNotFoundException)
             {
-                throw new CommandArgumentNotFoundException(commandArgs.Args[1]);
+                throw new CommandArgumentNotFoundException(commandArgs.Args[iteration]);
             }
         }
         else

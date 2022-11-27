@@ -9,10 +9,8 @@ public class CurrencyConfiguration : IEntityTypeConfiguration<Currency>
 {
     public void Configure(EntityTypeBuilder<Currency> builder)
     {
-        builder.Property(u => u.Id).ValueGeneratedOnAdd();
-
         builder.HasMany<User>()
             .WithOne(u => u.SelectedCurrency)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

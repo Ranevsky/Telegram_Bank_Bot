@@ -1,9 +1,7 @@
 ﻿using Bank.Application.Interfaces;
-using Bank.Infrastructure.Persistence;
 using Bank.Infrastructure.Repositories;
 using Bank.Infrastructure.Services;
 using Bank.Infrastructure.Services.HtmlDocuments;
-using Base.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -19,7 +17,6 @@ public static class ConfigureServices
         services.AddBankUpdater();
         services.AddGetHtmlDocument();
         services.AddUpdateExchangeInformation(context);
-        services.AddBankContext(context);
         services.AddBankRepositories();
 
         return services;
@@ -27,34 +24,19 @@ public static class ConfigureServices
 
     private static IServiceCollection AddBankUpdater(this IServiceCollection services)
     {
+        services.AddScoped<MyFinGetterHtmlDocument>();
         services.AddScoped<MyFinParser>();
-        services.AddScoped<BankChecker>();
-
-        services.AddScoped<IBankUpdater, MyFinBankUpdater>(serviceProvider =>
-        {
-            var parser = serviceProvider.GetRequiredService<MyFinParser>();
-            var checker = serviceProvider.GetRequiredService<BankChecker>();
-
-            var updater = new MyFinBankUpdater(parser, checker);
-
-            return updater;
-        });
+        services.AddScoped<GetBanksFromMyFin>();
+        services.AddScoped<IGetBanks, GetBanksFromMyFin>();
+        services.AddScoped<IBankChecker, BankChecker>();
+        services.AddScoped<IBankUpdater, MyFinBankUpdater>();
 
         return services;
     }
 
     private static IServiceCollection AddGetHtmlDocument(this IServiceCollection services)
     {
-        services.AddScoped<IGetHtmlDocument, GetterMyFinHtmlDocument>();
-
-        return services;
-    }
-
-    private static IServiceCollection AddBankContext(this IServiceCollection services, HostBuilderContext context)
-    {
-        var bankConnection = context.Configuration.GetConnectionString("BankConnection");
-
-        services.AddDbContext<IBankContext, BankContext>(bankConnection);
+        services.AddScoped<IGetHtmlDocument, MyFinGetterHtmlDocument>();
 
         return services;
     }
@@ -68,12 +50,11 @@ public static class ConfigureServices
 
         services.AddScoped<IUpdateExchangeInformation, UpdateExchangeInformation>(serviceProvider =>
         {
-            var db = serviceProvider.GetRequiredService<IBankContext>();
+            var cityRepository = serviceProvider.GetRequiredService<ICityRepository>();
             var bankUpdater = serviceProvider.GetRequiredService<IBankUpdater>();
-            var getterHtml = serviceProvider.GetRequiredService<IGetHtmlDocument>();
             var logger = serviceProvider.GetRequiredService<ILogger<UpdateExchangeInformation>>();
 
-            var updateExchange = new UpdateExchangeInformation(db, bankUpdater, getterHtml, updateTimeInSecond, logger);
+            var updateExchange = new UpdateExchangeInformation(cityRepository, bankUpdater, updateTimeInSecond, logger);
 
             return updateExchange;
         });
@@ -85,6 +66,7 @@ public static class ConfigureServices
     {
         services.AddBankRepository();
         services.AddDepartmentRepository();
+        services.AddCityRepository();
 
         return services;
     }
@@ -98,7 +80,14 @@ public static class ConfigureServices
 
     private static IServiceCollection AddDepartmentRepository(this IServiceCollection services)
     {
-        services.AddSingleton<IDepartmentRepository, DepartmentRepository>();
+        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddCityRepository(this IServiceCollection services)
+    {
+        services.AddScoped<ICityRepository, CityRepository>();
 
         return services;
     }

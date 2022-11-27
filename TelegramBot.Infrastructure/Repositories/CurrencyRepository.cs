@@ -26,7 +26,7 @@ public class TelegramCurrencyRepository : ITelegramCurrencyRepository
     public async Task<Currency> GetAsync(string name)
     {
         var curr = await _db.Currencies
-                       .FirstOrDefaultAsync(c => c.Name.ToUpper() == name.ToUpper())
+                       .FirstOrDefaultAsync(c => c.Name == name)
                    ?? throw new CurrencyNotFoundException();
 
         return curr;

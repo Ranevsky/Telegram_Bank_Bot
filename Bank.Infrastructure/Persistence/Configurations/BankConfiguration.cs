@@ -11,10 +11,6 @@ public class BankConfiguration : IEntityTypeConfiguration<Domain.Entities.Bank>
 
         builder.HasMany(b => b.Departments)
             .WithOne(d => d.Bank)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(b => b.BestCurrencies)
-            .WithOne()
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -40,16 +40,15 @@ public class CallbackQueryHandler : Handler<Update>
             var data = update.CallbackQuery!.Data ?? "Empty";
             _logger.LogInformation(user, "press button with callback data = '{CallbackData}'", data);
 
-            var isActive = await _uow.Users.GetActiveAsync(user.Id);
-            if (!isActive)
-            {
-                _logger.LogWarning(user, "not active, but he press callback button");
-                return;
-            }
-
-
             try
             {
+                var isActive = await _uow.Users.GetActiveAsync(user.Id);
+                if (!isActive)
+                {
+                    _logger.LogWarning(user, "not active, but he press callback button");
+                    return;
+                }
+
                 await _handler.HandleAsync(callbackArgs);
             }
             catch (HandlerNotFoundException)

@@ -1,4 +1,4 @@
-﻿using Base.Infrastructure;
+﻿using Bank.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using TelegramBot.Application.Interfaces;
@@ -14,24 +14,22 @@ public static class ConfigureServices
         HostBuilderContext builderContext)
     {
         services.AddTelegramBotApplicationServices();
-        services.AddTelegramContext(builderContext);
+        services.AddApplicationContext(builderContext);
         services.AddTelegramRepositories();
 
         return services;
     }
 
-    private static IServiceCollection AddTelegramContext(this IServiceCollection services, HostBuilderContext context)
+    private static IServiceCollection AddApplicationContext(
+        this IServiceCollection services,
+        HostBuilderContext context)
     {
-        var telegramConnection = context.Configuration.GetConnectionString("TelegramConnection");
+        var applicationContext = context.Configuration.GetConnectionString("ApplicationConnection");
 
-        services.AddDbContext<ITelegramContext, TelegramContext>(telegramConnection);
+        services.AddSqlServer<ApplicationContext>(applicationContext);
 
-        return services;
-    }
-
-    private static IServiceCollection AddUnitOfWork(this IServiceCollection services)
-    {
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IBankContext, ApplicationContext>();
+        services.AddScoped<ITelegramContext, ApplicationContext>();
 
         return services;
     }
@@ -55,6 +53,13 @@ public static class ConfigureServices
     private static IServiceCollection AddTelegramCurrencyRepository(this IServiceCollection services)
     {
         services.AddScoped<ITelegramCurrencyRepository, TelegramCurrencyRepository>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddUnitOfWork(this IServiceCollection services)
+    {
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

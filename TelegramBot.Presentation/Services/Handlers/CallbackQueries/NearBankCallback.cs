@@ -43,7 +43,7 @@ public class NearBankCallback : Handler<CallbackArgs>
             const int take = 10;
             var page = int.Parse(args.Args[args.ArgsIteration + 1]);
             args.ArgsIteration += 2;
-            var isBuyOperation = _uow.Users.GetBuyOperation(args.From.Id) ?? false;
+            var isBuyOperation = await _uow.Users.GetBuyOperationAsync(args.From.Id) ?? false;
 
             IOrderedEnumerable<DepartmentByDistance> Order(IEnumerable<DepartmentByDistance> model)
             {

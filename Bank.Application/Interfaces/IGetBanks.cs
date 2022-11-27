@@ -3,7 +3,7 @@ using Bank.Domain.Entities;
 
 namespace Bank.Application.Interfaces;
 
-public interface IBankChecker
+public interface IGetBanks
 {
-    Task CheckAsync(BanksWithInternetBanks newBanks, City city);
+    Task<BanksWithInternetBanks> GetBanksAsync(City city);
 }

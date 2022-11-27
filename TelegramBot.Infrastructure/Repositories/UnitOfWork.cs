@@ -4,13 +4,10 @@ using TelegramBot.Application.Interfaces;
 
 namespace TelegramBot.Infrastructure.Repositories;
 
-// Todo: Look in ILogger (UserRepository, BankRepository)
 public class UnitOfWork : IUnitOfWork
 {
     private readonly ITelegramContext _dbTg;
     private readonly ILogger<IUnitOfWork> _uowLogger;
-
-    private bool _disposed;
 
     public UnitOfWork(
         ITelegramContext dbApp,
@@ -18,7 +15,8 @@ public class UnitOfWork : IUnitOfWork
         IUserRepository usersRepository,
         ITelegramCurrencyRepository telegramCurrenciesRepository,
         IBankRepository banksRepository,
-        IDepartmentRepository departmentsRepository)
+        IDepartmentRepository departmentsRepository,
+        ICityRepository cityRepository)
     {
         _dbTg = dbApp;
 
@@ -28,12 +26,14 @@ public class UnitOfWork : IUnitOfWork
         TelegramCurrencies = telegramCurrenciesRepository;
         Banks = banksRepository;
         Departments = departmentsRepository;
+        Cities = cityRepository;
     }
 
     public IUserRepository Users { get; }
     public ITelegramCurrencyRepository TelegramCurrencies { get; }
     public IBankRepository Banks { get; }
     public IDepartmentRepository Departments { get; }
+    public ICityRepository Cities { get; }
 
 
     public bool TelegramDbHasChanged => _dbTg.ChangeTracker.HasChanges();
@@ -42,26 +42,5 @@ public class UnitOfWork : IUnitOfWork
     {
         var affectedCount = await _dbTg.SaveChangesAsync(CancellationToken.None);
         _uowLogger.LogInformation("Save in telegram database, {AffectedCount} rows affected", affectedCount);
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        if (disposing)
-        {
-            _dbTg.Dispose();
-        }
-
-        _disposed = true;
     }
 }

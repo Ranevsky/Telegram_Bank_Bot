@@ -1,5 +1,4 @@
-﻿using Base.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TelegramBot.Domain.Entities;
 
@@ -13,10 +12,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasOne(u => u.Location)
             .WithOne()
-            .HasForeignKey<Location>(l => l.UserId)
+            .HasForeignKey<User>()
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(u => u.NearCity)
             .WithMany();
+
+        builder
+            .HasOne(u => u.SelectedCurrency)
+            .WithMany()
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

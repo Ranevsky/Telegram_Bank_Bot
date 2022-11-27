@@ -103,8 +103,6 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> GetActiveAsync(long id)
     {
-        // Todo: maybe change logic
-        // Todo: maybe have exception
         var user = await _db.Users.Select(u => new { u.Id, u.IsActive })
                        .FirstOrDefaultAsync(u => u.Id == id)
                    ?? throw new UserNotFoundException();
@@ -112,12 +110,12 @@ public class UserRepository : IUserRepository
         return user.IsActive;
     }
 
-    public bool? GetBuyOperation(long id)
+    public async Task<bool?> GetBuyOperationAsync(long id)
     {
-        // Todo: maybe have exception
-        var user = new User { Id = id };
-        _db.Entry(user).Property(u => u.IsBuyOperation);
-        return user.IsBuyOperation;
+        var model = await _db.Users.Select(u => new { u.Id, u.IsBuyOperation }).FirstOrDefaultAsync(u => u.Id == id)
+                    ?? throw new UserNotFoundException();
+
+        return model.IsBuyOperation;
     }
 
     public async Task<User> GetWithCurrencyAsync(long id, bool tracking = false)
@@ -129,7 +127,7 @@ public class UserRepository : IUserRepository
 
     public async Task SetCityAsync(User user, City city)
     {
-        var cityDb = await _db.Cities.FirstOrDefaultAsync(c => c.Name.ToUpper() == city.Name.ToUpper());
+        var cityDb = await _db.Cities.FirstOrDefaultAsync(c => c.Name == city.Name);
 
         if (cityDb is null)
         {

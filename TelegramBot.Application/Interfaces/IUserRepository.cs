@@ -33,5 +33,5 @@ public interface IUserRepository
     Task<User> GetWithLocationAndCurrencyAndNearCityAsync(long id, bool tracking = false);
     Task SetActiveAsync(long id, bool active);
     Task<bool> GetActiveAsync(long id);
-    bool? GetBuyOperation(long id);
+    Task<bool?> GetBuyOperationAsync(long id);
 }

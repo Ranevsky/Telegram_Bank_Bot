@@ -1,9 +1,11 @@
-﻿namespace Bank.Infrastructure.Services;
+﻿using Bank.Application.Interfaces;
+
+namespace Bank.Infrastructure.Services;
 
 public class MyFinBankUpdater : BankUpdater
 {
-    public MyFinBankUpdater(MyFinParser parser, BankChecker checker)
-        : base(parser, checker)
+    public MyFinBankUpdater(GetBanksFromMyFin getBanks, IBankChecker checker)
+        : base(getBanks, checker)
     {
     }
 }

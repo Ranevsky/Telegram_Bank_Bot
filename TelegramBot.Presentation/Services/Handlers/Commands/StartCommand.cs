@@ -34,7 +34,6 @@ public class StartCommand : Handler<CommandArgs>
                 _logger.LogInformation(args.From, "registered");
             }
 
-            // Todo: is repeated in '/test' command (delete this or '/test')
             InlineKeyboardMarkup keyboard = new(InlineKeyboardButton.WithCallbackData("Start", MainCallback.Name));
 
             await _bot.SendTextMessageAsync(args.ChatId, "Let's go", replyMarkup: keyboard);

@@ -9,8 +9,5 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
     public void Configure(EntityTypeBuilder<Location> builder)
     {
         builder.Property(l => l.Id).ValueGeneratedOnAdd();
-
-        builder.Property(l => l.Id)
-            .ValueGeneratedOnAdd();
     }
 }

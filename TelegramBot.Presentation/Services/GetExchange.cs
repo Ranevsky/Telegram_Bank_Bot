@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Bank.Application.Exceptions;
 using Bank.Application.Models;
 using Base.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Application.Interfaces;
@@ -9,18 +11,19 @@ using TelegramBot.Presentation.Services.Handlers.CallbackQueries;
 
 namespace TelegramBot.Presentation.Services;
 
-// Todo: move new directories
 public class GetExchange
 {
     private readonly ITelegramBotClient _bot;
+    private readonly ILogger<GetExchange> _logger;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
 
-    public GetExchange(ITelegramBotClient bot, IUnitOfWork uow, IMapper mapper)
+    public GetExchange(ITelegramBotClient bot, IUnitOfWork uow, IMapper mapper, ILogger<GetExchange> logger)
     {
         _bot = bot;
         _uow = uow;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task GetFormsAsync(
@@ -34,7 +37,6 @@ public class GetExchange
         {
             var keyboard = SettingsCallback.GetKeyboard();
             var mainText = await MainCallback.GetTextAsync(_uow, userId);
-            // Todo: maybe have exception
             var text = mainText +
                        "\n=== Error ===\n" +
                        string.Join("\n", message);
@@ -64,13 +66,22 @@ public class GetExchange
 
         var location = _mapper.Map<Location>(user.Location);
 
-        var departments = await _uow.Departments.GetOrderedDepartments(
-            user.NearCity!.Name,
-            user.SelectedCurrency!.Name,
-            location,
-            order,
-            page,
-            take);
+        DepartmentsCounter departments;
+        try
+        {
+            departments = await _uow.Departments.GetOrderedDepartments(
+                user.NearCity!.Name,
+                user.SelectedCurrency!.Name,
+                location,
+                order,
+                page,
+                take);
+        }
+        catch (BankUpdateException ex)
+        {
+            _logger.LogError("Failed to update information due to '{Message}'", ex.Message);
+            return;
+        }
 
         var format =
             "Format:\n" +

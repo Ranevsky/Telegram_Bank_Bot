@@ -40,14 +40,14 @@ public class DepartmentCallback : Handler<CallbackArgs>
             // current curr
             var curr =
                 department.Currencies.FirstOrDefault(c =>
-                    c.Currency.Name.ToUpper() == userDb.SelectedCurrency!.Name.ToUpper())!;
+                    string.Equals(c.Currency.Name, userDb.SelectedCurrency!.Name,
+                        StringComparison.CurrentCultureIgnoreCase))!;
 
             Location userLocation = new()
                 { Longitude = userDb.Location.Longitude, Latitude = userDb.Location.Latitude };
             var distance = Location.Distance(userLocation, department.Location);
             var text =
                 $"Distance: {distance * 1000:f0}\n" +
-                // Todo: Check department.Bank
                 $"Bank: {department.Bank.Name}\n" +
                 $"Street: {department.Street}\n" +
                 //"Format: Currency: Buy | Sell\n" +

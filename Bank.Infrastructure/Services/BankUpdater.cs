@@ -1,27 +1,23 @@
-﻿using Bank.Application.Exceptions;
-using Bank.Application.Interfaces;
+﻿using Bank.Application.Interfaces;
 using Bank.Domain.Entities;
-using HtmlAgilityPack;
 
 namespace Bank.Infrastructure.Services;
 
 public class BankUpdater : IBankUpdater
 {
-    public BankUpdater(IBankParser parser, IBankChecker checker)
+    private readonly IBankChecker _checker;
+    private readonly IGetBanks _getBanks;
+
+    public BankUpdater(IGetBanks getBanks, IBankChecker checker)
     {
-        Parser = parser;
-        Checker = checker;
+        _getBanks = getBanks;
+        _checker = checker;
     }
 
-    // public IBankChecker Checker => _checker;
-    public IBankParser Parser { get; }
-    public IBankChecker Checker { get; }
-
-    /// <exception cref="HtmlParseException"></exception>
-    public async Task UpdateAsync(HtmlDocument document, City city)
+    public async Task UpdateAsync(City city)
     {
-        var banks = Parser.Parse(document, city);
-        await Checker.CheckAsync(banks, city);
-        city.LastUpdate = DateTime.Now;
+        var banks = await _getBanks.GetBanksAsync(city);
+
+        await _checker.CheckAsync(banks, city);
     }
 }

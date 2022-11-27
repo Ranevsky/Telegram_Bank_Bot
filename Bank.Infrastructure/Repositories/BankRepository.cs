@@ -1,4 +1,5 @@
-﻿using Bank.Application.Interfaces;
+﻿using System.Text.Json;
+using Bank.Application.Interfaces;
 using Bank.Domain.Entities;
 using Base.Domain.Entities;
 using Geocoding.Application.Interfaces;
@@ -26,13 +27,6 @@ public class BankRepository : IBankRepository
         _logger = logger;
     }
 
-    public async Task<List<Domain.Entities.Bank>> GetBanksAsync()
-    {
-        return await _db.Banks
-            .Include(b => b.BestCurrencies)
-            .ToListAsync();
-    }
-
     public async Task<List<Domain.Entities.Bank>> GetBanksWithCityAsync(string cityName, bool onUpdate = true)
     {
         if (onUpdate)
@@ -40,23 +34,24 @@ public class BankRepository : IBankRepository
             await _updateExchange.UpdateAsync(cityName);
         }
 
-        cityName = cityName.ToUpper();
-
-
         return await _db.Banks
-            .Include(b => b.BestCurrencies)
-            .Include(b => b.Departments.Where(d => d.City.Name.ToUpper() == cityName))
+            .Include(b => b.Departments.Where(d => d.City.Name == cityName))
             .ThenInclude(d => d.Currencies)
-            .Include(b => b.Departments.Where(d => d.City.Name.ToUpper() == cityName))
+            .Include(b => b.Departments.Where(d => d.City.Name == cityName))
             .ThenInclude(d => d.Location)
             .ToListAsync();
     }
 
     public async Task CheckLocationAsync(string cityName)
     {
-        var city = (await _db.Cities
+        var city = await _db.Cities
             .Include(c => c.Location)
-            .FirstOrDefaultAsync(c => c.Name.ToUpper() == cityName.ToUpper()))!;
+            .FirstOrDefaultAsync(c => c.Name == cityName);
+
+        if (city is null)
+        {
+            return;
+        }
 
         await CheckLocationAsync(city);
     }
@@ -69,10 +64,10 @@ public class BankRepository : IBankRepository
             throw new ArgumentNullException(nameof(city));
         }
 
-        IEnumerable<List<Department>> departmentsCollection = _db.Banks
-            .Include(b => b.Departments.Where(d => d.City == city))
-            .ThenInclude(d => d.Location)
-            .Select(b => b.Departments)
+        var departments = _db.Departments
+            .Where(d => d.City.Id == city.Id)
+            .Include(d => d.Location)
+            .Where(d => d.Location == null)
             .ToList();
 
         var isSave = true;
@@ -80,10 +75,7 @@ public class BankRepository : IBankRepository
         {
             var locationAndRadius = await _getLocation.GetLocationAndRadiusAsync(city.Name);
             city.Radius = locationAndRadius.Radius;
-            if (city.Location is null)
-            {
-                city.Location = locationAndRadius.Location;
-            }
+            city.Location ??= locationAndRadius.Location;
         }
         else if (city.Location is null)
         {
@@ -96,29 +88,28 @@ public class BankRepository : IBankRepository
 
         try
         {
-            foreach (var departments in departmentsCollection)
+            foreach (var department in departments)
             {
-                foreach (var department in departments)
+                if (department.Location is not null)
                 {
-                    if (department.Location is not null)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    department.Location = await _getLocation.GetLocationAsync(department.Street);
+                department.Location = await _getLocation.GetLocationAsync(department.Street);
 
-                    var distance = Location.Distance(city.Location, department.Location);
-                    if (distance >= city.Radius)
-                    {
-                        _logger.LogError(
-                            "Department with id = '{DepartmentId}', not located in radius of occurrence = '{CityRadius}', distance = '{Distance}'",
-                            department.Id, city.Radius, distance);
-                        department.Location = null;
-                    }
-                    else
-                    {
-                        isSave = true;
-                    }
+                var distance = Location.Distance(city.Location, department.Location);
+                if (distance >= city.Radius)
+                {
+                    _logger.LogError(
+                        "Department with id = '{DepartmentId}', not located in radius of occurrence = '{CityRadius}', distance = '{Distance}', location json = {LocationJson}",
+                        department.Id, city.Radius, distance,
+                        JsonSerializer.Serialize(department.Location));
+
+                    department.Location = null;
+                }
+                else
+                {
+                    isSave = true;
                 }
             }
         }

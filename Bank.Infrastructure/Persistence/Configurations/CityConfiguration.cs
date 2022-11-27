@@ -1,9 +1,8 @@
 ﻿using Bank.Domain.Entities;
-using Base.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace TelegramBot.Infrastructure.Persistence.Configurations;
+namespace Bank.Infrastructure.Persistence.Configurations;
 
 public class CityConfiguration : IEntityTypeConfiguration<City>
 {
@@ -13,7 +12,6 @@ public class CityConfiguration : IEntityTypeConfiguration<City>
 
         builder.HasOne(c => c.Location)
             .WithOne()
-            .HasForeignKey<Location>(l => l.CityId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

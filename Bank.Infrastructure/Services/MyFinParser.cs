@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using Bank.Application.Exceptions;
 using Bank.Application.Interfaces;
+using Bank.Application.Models;
 using Bank.Domain.Entities;
 using Bank.Infrastructure.Models.Factories.Currencies;
 using HtmlAgilityPack;
@@ -19,10 +21,38 @@ public class MyFinParser : IBankParser
     }
 
     /// <exception cref="HtmlParseException"></exception>
-    public List<Domain.Entities.Bank> Parse(HtmlDocument document, City city)
+    public BanksWithInternetBanks Parse(
+        HtmlDocument document,
+        City city,
+        Currency[]? currenciesInDb = null,
+        bool checkRedirection = true)
     {
         _logger.LogTrace("Parsing 'MyFin'");
-        var bankList = new List<Domain.Entities.Bank>();
+
+
+        // <meta property="og:url" content="...">
+        // have 1 in site: 'property="og:url"'
+        if (checkRedirection)
+        {
+            var pattern = "[a-zA-Z- ]";
+            var regex = new Regex(pattern);
+            if (!regex.IsMatch(city.Name))
+            {
+                throw new CityNotValidException($"City name = '{city.Name}' failed regular expression = '{pattern}'");
+            }
+
+            var node = document.DocumentNode.SelectSingleNode("//meta[@property=\"og:url\"]");
+            var attrib = node.Attributes["content"];
+            var url = attrib.Value;
+
+            if (!url.Contains(city.Name, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new HtmlParseRedirectException();
+            }
+        }
+
+        var banks = new List<Domain.Entities.Bank>();
+        var internetBanks = new List<InternetBank>();
         var bank = new Domain.Entities.Bank();
 
         // Get table banks
@@ -31,6 +61,28 @@ public class MyFinParser : IBankParser
                         ?? throw new HtmlParseNotFoundException(banksTableXPath);
 
         string bankId = null!;
+
+        Currency[] currencies;
+        if (currenciesInDb is null)
+        {
+            currencies = new Currency[]
+            {
+                new Usd(),
+                new Eur(),
+                new Rub(),
+                new EurToUsd()
+            };
+        }
+        else
+        {
+            currencies = new[]
+            {
+                currenciesInDb.FirstOrDefault(c => c.Name == Usd.CurrName) ?? new Usd(),
+                currenciesInDb.FirstOrDefault(c => c.Name == Eur.CurrName) ?? new Eur(),
+                currenciesInDb.FirstOrDefault(c => c.Name == Rub.CurrName) ?? new Rub(),
+                currenciesInDb.FirstOrDefault(c => c.Name == EurToUsd.CurrName) ?? new EurToUsd()
+            };
+        }
 
         foreach (var bankNode in banksNode)
         {
@@ -49,38 +101,43 @@ public class MyFinParser : IBankParser
             // 7 -> EUR->USD Buy
             // 8 -> EUR->USD Sell
 
-            var currencies = new Currency[]
-            {
-                new Usd(),
-                new Eur(),
-                new Rub(),
-                new EurToUsd()
-            };
-
             if (classType.Contains("static c-currency-table__main-row"))
             {
-                ParseInternetBank(bankNode, bankList, currencies);
+                ParseInternetBank(bankNode, internetBanks, currencies);
             }
             else if (classType.Contains("c-currency-table__main-row"))
             {
-                ParseBank(bankNode, bank, ref bankId, currencies);
+                ParseBank(bankNode, bank, ref bankId);
             }
             else if (classType.Contains("c-currency-table__additional-row"))
             {
-                ParseDepartments(bankNode, bankList, bank, city, bankId, currencies);
+                ParseDepartments(bankNode, banks, bank, city, bankId, currencies);
                 bank = new Domain.Entities.Bank();
             }
         }
 
-        return bankList.Count < 1
-            ? throw new HtmlParseException("Bank not found")
-            : bankList;
+        _logger.LogTrace("Finished parsing 'MyFin'");
 
-        static void ParseInternetBank(HtmlNode bankNode, List<Domain.Entities.Bank> bankList, Currency[] currencies)
+        if (banks.Count < 1)
+        {
+            throw new HtmlParseException("Bank not found");
+        }
+
+        if (internetBanks.Count < 1)
+        {
+            throw new HtmlParseException("Internet bank not found");
+        }
+
+        var model = new BanksWithInternetBanks { Banks = banks, InternetBanks = internetBanks };
+
+        return model;
+
+        // Local functions
+        static void ParseInternetBank(HtmlNode bankNode, List<InternetBank> internetBanks, Currency[] currencies)
         {
             // Internet bank
 
-            var internetBank = new Domain.Entities.Bank();
+            var internetBank = new InternetBank();
 
             var information = new string[9];
             var iteration = 0;
@@ -122,12 +179,12 @@ public class MyFinParser : IBankParser
 
             var currencyExchange = GetCurrency(currencies, information);
 
-            internetBank.BestCurrencies.AddRange(currencyExchange);
+            internetBank.Currencies.AddRange(currencyExchange);
 
-            bankList.Add(internetBank);
+            internetBanks.Add(internetBank);
         }
 
-        static void ParseBank(HtmlNode bankNode, Domain.Entities.Bank bank, ref string bankId, Currency[] currencies)
+        static void ParseBank(HtmlNode bankNode, Domain.Entities.Bank bank, ref string bankId)
         {
             // Bank
 
@@ -154,9 +211,9 @@ public class MyFinParser : IBankParser
                 throw new HtmlParseException("Not found bank name");
             }
 
-            var currencyExchange = GetCurrency(currencies, information);
+            // var currencyExchange = GetCurrency(currencies, information);
 
-            bank.BestCurrencies.AddRange(currencyExchange);
+            // bank.BestCurrencies.AddRange(currencyExchange);
         }
 
         static void ParseDepartments(
@@ -199,22 +256,7 @@ public class MyFinParser : IBankParser
                     information[iteration++] = informationNode.InnerText;
                 }
 
-                var street = information[0].Trim();
-                var endIndex = street.LastIndexOf("  ", StringComparison.Ordinal);
-
-                if (endIndex > 0)
-                {
-                    street = street.Substring(0, endIndex);
-                }
-
-                while (street.Contains("  "))
-                {
-                    street = street.Replace("  ", " ");
-                }
-
-                street = street.Replace('«', '\"').Replace('»', '\"');
-
-                information[0] = street;
+                information[0] = FormattingText(information[0]);
 
                 var department = new Department
                 {
@@ -242,6 +284,47 @@ public class MyFinParser : IBankParser
             }
 
             bankList.Add(bank);
+        }
+
+        // Local function
+        static string FormattingText(string value)
+        {
+            var newString = new StringBuilder();
+            var previousIsWhitespace = true;
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (char.IsWhiteSpace(value[i]))
+                {
+                    if (previousIsWhitespace)
+                    {
+                        continue;
+                    }
+
+                    previousIsWhitespace = true;
+                }
+                else
+                {
+                    previousIsWhitespace = false;
+                }
+
+                if (value[i] == '«' || value[i] == '»')
+                {
+                    newString.Append('"');
+                }
+                else
+                {
+                    newString.Append(value[i]);
+                }
+            }
+
+            var length = newString.Length - 1;
+            if (char.IsWhiteSpace(newString[length]))
+            {
+                newString.Remove(length, 1);
+            }
+
+            return newString.ToString();
         }
     }
 
